@@ -27,7 +27,7 @@ import "./views/remove-dialog";
 import "./views/manage-view";
 import type { ItemFormResult } from "./views/item-form";
 
-const CARD_VERSION = "1.0.0";
+const CARD_VERSION = "1.0.1";
 const DEFAULT_FREEZER = "main_freezer";
 const UNDO_TIMEOUT = 6000;
 
