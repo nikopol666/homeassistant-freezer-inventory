@@ -34,6 +34,18 @@ A custom Home Assistant integration + Lovelace card for tracking individual pack
 - 🌍 **Czech & English** — language selected in the integration, independent of the HA language
 - 🏪 **One-repo HACS install** — the card resource registers automatically
 
+## Screenshots
+
+| Freezer list (dark) | Add form — tablet mode |
+|---|---|
+| ![Freezer list with category filters and old-item highlighting](docs/images/list-dark.png) | ![Two-column add form with weight and piece quick-picks](docs/images/form-tablet-dark.png) |
+
+| Product picker (light) | Remove dialog (phone) | Preset management |
+|---|---|---|
+| ![Category-grouped product picker](docs/images/picker-light.png) | ![Remove confirmation with half/amount options](docs/images/remove-mobile-dark.png) | ![Category and product management](docs/images/manage-light.png) |
+
+Dashboard tile: ![Dashboard tile](docs/images/tile.png)
+
 ## Installation
 
 ### HACS (recommended)

@@ -34,6 +34,18 @@ Vlastní integrace a Lovelace karta pro Home Assistant určená k evidenci jedno
 - 🌍 **Čeština a angličtina** — jazyk se volí v integraci, nezávisle na jazyku Home Assistantu
 - 🏪 **Instalace přes HACS z jednoho repozitáře** — karta se do Lovelace registruje automaticky
 
+## Ukázky
+
+| Seznam mrazáku (tmavý režim) | Formulář přidání — tabletový režim |
+|---|---|
+| ![Seznam s filtry kategorií a zvýrazněním starých položek](docs/images/list-dark.png) | ![Dvousloupcový formulář s rychlými volbami hmotnosti a kusů](docs/images/form-tablet-dark.png) |
+
+| Výběr produktu (světlý režim) | Dialog vyjmutí (mobil) | Správa předvoleb |
+|---|---|---|
+| ![Výběr produktu podle kategorií](docs/images/picker-light.png) | ![Potvrzení vyjmutí s volbami polovina/množství](docs/images/remove-mobile-dark.png) | ![Správa kategorií a produktů](docs/images/manage-light.png) |
+
+Dlaždice na dashboardu: ![Dlaždice](docs/images/tile.png)
+
 ## Instalace
 
 ### HACS (doporučeno)
