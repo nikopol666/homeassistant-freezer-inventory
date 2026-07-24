@@ -1,0 +1,672 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Návrh A — HA nativní</title>
+<style>
+  :root{
+    --bg:#f5f6f8;
+    --card:#ffffff;
+    --card2:#f0f2f5;
+    --text:#1c1e24;
+    --text2:#6b7280;
+    --divider:rgba(0,0,0,.08);
+    --accent:#03a9f4;
+    --accent-hover:#0398db;
+    --on-accent:#ffffff;
+    --chip-bg:#e8eaee;
+    --chip-active-bg:rgba(3,169,244,.14);
+    --warn:#ff9800;
+    --warn-bg:rgba(255,152,0,.13);
+    --danger:#f44336;
+    --danger-bg:rgba(244,67,54,.12);
+    --shadow:0 1px 3px rgba(0,0,0,.10),0 1px 2px rgba(0,0,0,.06);
+    --shadow-lg:0 12px 32px rgba(0,0,0,.22);
+    --overlay:rgba(0,0,0,.42);
+    --tile-hover:rgba(3,169,244,.07);
+  }
+  [data-theme="dark"]{
+    --bg:#111318;
+    --card:#1c1e24;
+    --card2:#24262e;
+    --text:#e8eaed;
+    --text2:#9aa0a6;
+    --divider:rgba(255,255,255,.09);
+    --accent:#03a9f4;
+    --accent-hover:#29b6f6;
+    --on-accent:#04131c;
+    --chip-bg:#2a2d35;
+    --chip-active-bg:rgba(3,169,244,.20);
+    --warn:#ffb74d;
+    --warn-bg:rgba(255,152,0,.16);
+    --danger:#ef9a9a;
+    --danger-bg:rgba(244,67,54,.18);
+    --shadow:0 1px 3px rgba(0,0,0,.45);
+    --shadow-lg:0 12px 36px rgba(0,0,0,.6);
+    --overlay:rgba(0,0,0,.6);
+    --tile-hover:rgba(3,169,244,.10);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:Roboto,"Noto Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+    background:var(--bg);color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    transition:background .25s,color .25s;
+  }
+  button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  input,select,textarea{font:inherit;color:var(--text)}
+
+  /* ── lišta mockupu ─────────────────────────── */
+  .mockbar{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:10px 16px;background:var(--card);box-shadow:var(--shadow);
+    position:sticky;top:0;z-index:50;
+  }
+  .mockbar .label{font-size:14px;font-weight:500;letter-spacing:.2px}
+  .mockbar .label span{color:var(--text2);font-weight:400}
+  .theme-toggle{
+    min-width:48px;min-height:40px;border-radius:20px;padding:0 14px;
+    background:var(--chip-bg);font-size:18px;line-height:1;
+  }
+
+  /* ── simulovaný dashboard ──────────────────── */
+  .dash{max-width:1100px;margin:0 auto;padding:24px 16px 64px}
+  .dash h1{font-size:22px;font-weight:400;margin:8px 4px 18px;color:var(--text)}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+  .tile{
+    display:flex;align-items:center;gap:14px;text-align:left;
+    background:var(--card);border-radius:12px;box-shadow:var(--shadow);
+    padding:14px 16px;min-height:72px;transition:background .15s,transform .1s;
+  }
+  .tile:active{transform:scale(.98)}
+  .tile .ticon{
+    width:42px;height:42px;border-radius:50%;flex:none;
+    display:flex;align-items:center;justify-content:center;font-size:22px;
+    background:var(--chip-bg);
+  }
+  .tile .tname{font-size:15px;font-weight:500}
+  .tile .tstate{font-size:13px;color:var(--text2);margin-top:2px}
+  .tile.primary{cursor:pointer}
+  .tile.primary:hover{background:var(--tile-hover)}
+  .tile.primary .ticon{background:var(--chip-active-bg);color:var(--accent)}
+  .tile.dim{opacity:.65;cursor:default}
+
+  /* ── popup ─────────────────────────────────── */
+  .overlay{
+    position:fixed;inset:0;background:var(--overlay);z-index:100;
+    display:none;align-items:center;justify-content:center;padding:20px;
+  }
+  .overlay.open{display:flex}
+  .dialog{
+    background:var(--card);border-radius:16px;box-shadow:var(--shadow-lg);
+    width:100%;max-width:520px;max-height:min(720px,92vh);
+    display:flex;flex-direction:column;overflow:hidden;
+  }
+  @media (max-width:600px){
+    .overlay{padding:0}
+    .dialog{max-width:none;max-height:none;height:100%;border-radius:0}
+  }
+  .dlg-head{
+    display:flex;align-items:center;gap:6px;flex:none;
+    padding:10px 10px 10px 8px;border-bottom:1px solid var(--divider);
+  }
+  .dlg-head h2{font-size:19px;font-weight:500;flex:1;padding-left:6px;letter-spacing:.2px}
+  .icon-btn{
+    width:48px;height:48px;border-radius:50%;flex:none;
+    display:flex;align-items:center;justify-content:center;color:var(--text2);
+  }
+  .icon-btn:hover{background:var(--chip-bg);color:var(--text)}
+  .icon-btn svg{width:24px;height:24px;fill:currentColor}
+  .dlg-body{flex:1;overflow-y:auto;overscroll-behavior:contain}
+  .dlg-foot{flex:none;padding:12px 16px 16px;border-top:1px solid var(--divider)}
+  .screen{display:none}
+  .screen.active{display:block}
+
+  /* ── chipy filtru ──────────────────────────── */
+  .chips{display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px 4px}
+  .chip{
+    min-height:40px;padding:0 16px;border-radius:20px;font-size:14px;font-weight:500;
+    background:var(--chip-bg);color:var(--text2);transition:background .15s,color .15s;
+  }
+  .chip.on{background:var(--chip-active-bg);color:var(--accent)}
+
+  /* ── seznam položek ────────────────────────── */
+  .items{padding:8px 8px 4px}
+  .item-row{
+    display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+    min-height:64px;padding:10px 12px;border-radius:12px;position:relative;
+    transition:background .15s;
+  }
+  .item-row:hover{background:var(--card2)}
+  .item-row::before{
+    content:"";position:absolute;left:0;top:12px;bottom:12px;width:4px;border-radius:2px;
+    background:transparent;
+  }
+  .item-row.warn::before{background:var(--warn)}
+  .item-row.danger::before{background:var(--danger)}
+  .item-row .emoji{
+    width:40px;height:40px;border-radius:50%;flex:none;font-size:20px;
+    display:flex;align-items:center;justify-content:center;background:var(--chip-bg);
+  }
+  .item-main{flex:1;min-width:0}
+  .item-name{font-size:15px;font-weight:600;line-height:1.3}
+  .item-sub{font-size:13px;color:var(--text2);margin-top:2px}
+  .item-note{font-size:12.5px;color:var(--text2);font-style:italic;margin-top:1px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .age-badge{
+    flex:none;font-size:12px;font-weight:600;padding:4px 10px;border-radius:12px;
+  }
+  .age-badge.warn{background:var(--warn-bg);color:var(--warn)}
+  .age-badge.danger{background:var(--danger-bg);color:var(--danger)}
+  .empty{padding:36px 16px;text-align:center;color:var(--text2);font-size:14px}
+
+  /* ── tlačítka ──────────────────────────────── */
+  .btn{
+    display:flex;align-items:center;justify-content:center;width:100%;
+    min-height:52px;border-radius:12px;font-size:15px;font-weight:600;
+    letter-spacing:.6px;transition:background .15s,transform .1s;
+  }
+  .btn:active{transform:scale(.99)}
+  .btn.primary{background:var(--accent);color:var(--on-accent)}
+  .btn.primary:hover{background:var(--accent-hover)}
+  .btn.tonal{background:var(--chip-active-bg);color:var(--accent)}
+  .btn.tonal:hover{filter:brightness(1.06)}
+  .btn.plain{color:var(--text2)}
+  .btn.plain:hover{background:var(--chip-bg);color:var(--text)}
+  .btn.danger-tonal{background:var(--danger-bg);color:var(--danger)}
+  .btn + .btn{margin-top:10px}
+
+  /* ── výběr produktu ────────────────────────── */
+  .pick{padding:8px 16px 16px}
+  .cat-label{
+    font-size:12.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+    color:var(--text2);margin:16px 2px 8px;
+  }
+  .cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+  .prod-tile{
+    min-height:64px;border-radius:12px;background:var(--card2);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    padding:8px;font-size:14.5px;font-weight:500;text-align:center;
+    border:1px solid var(--divider);transition:background .15s,border-color .15s;
+  }
+  .prod-tile:hover{background:var(--tile-hover);border-color:var(--accent)}
+  .prod-tile .pe{font-size:20px}
+
+  /* ── formulář ──────────────────────────────── */
+  .form{padding:16px}
+  .f-label{font-size:13px;font-weight:600;color:var(--text2);margin:18px 2px 8px}
+  .f-label:first-child{margin-top:2px}
+  .w-chips{display:flex;gap:8px;flex-wrap:wrap}
+  .w-chip{
+    min-height:44px;padding:0 16px;border-radius:22px;font-size:14.5px;font-weight:600;
+    background:var(--chip-bg);color:var(--text2);
+  }
+  .w-chip.on{background:var(--accent);color:var(--on-accent)}
+  .field{
+    width:100%;min-height:48px;padding:10px 14px;border-radius:12px;
+    border:1px solid var(--divider);background:var(--card2);outline:none;font-size:15px;
+  }
+  .field:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--chip-active-bg)}
+  .row2{display:flex;gap:12px}
+  .row2>div{flex:1}
+  .stepper{display:flex;align-items:center;gap:14px}
+  .step-btn{
+    width:48px;height:48px;border-radius:12px;background:var(--chip-bg);
+    font-size:22px;font-weight:600;color:var(--text);
+  }
+  .step-btn:hover{background:var(--chip-active-bg);color:var(--accent)}
+  .step-val{font-size:20px;font-weight:600;min-width:36px;text-align:center}
+  select.field{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--text2) 50%),linear-gradient(135deg,var(--text2) 50%,transparent 50%);
+    background-position:calc(100% - 20px) 55%,calc(100% - 14px) 55%;background-size:6px 6px;background-repeat:no-repeat}
+
+  /* ── dialog vyjmutí ────────────────────────── */
+  .remove-info{padding:20px 20px 8px;text-align:center}
+  .remove-info .re{font-size:40px}
+  .remove-info .rq{font-size:16.5px;font-weight:500;margin-top:10px;line-height:1.45}
+  .remove-info .rq b{font-weight:700}
+  .remove-actions{padding:14px 16px 18px}
+
+  /* ── zadat množství ────────────────────────── */
+  .qty-box{padding:20px 16px}
+  .qty-cur{font-size:14px;color:var(--text2);margin-bottom:14px}
+  .qty-input{
+    width:100%;min-height:60px;font-size:26px;font-weight:600;text-align:center;
+    border-radius:12px;border:1px solid var(--divider);background:var(--card2);outline:none;
+  }
+  .qty-input:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--chip-active-bg)}
+  .qty-preview{
+    margin-top:16px;padding:14px;border-radius:12px;background:var(--chip-active-bg);
+    color:var(--accent);font-size:15px;font-weight:600;text-align:center;
+  }
+  .qty-preview.bad{background:var(--danger-bg);color:var(--danger)}
+
+  /* ── snackbar ──────────────────────────────── */
+  .snackbar{
+    position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(90px);
+    background:#323232;color:#fff;border-radius:12px;box-shadow:var(--shadow-lg);
+    display:flex;align-items:center;gap:8px;padding:6px 8px 6px 18px;
+    font-size:14.5px;z-index:300;max-width:calc(100vw - 32px);
+    transition:transform .25s ease;
+  }
+  [data-theme="dark"] .snackbar{background:#e8eaed;color:#1c1e24}
+  .snackbar.show{transform:translateX(-50%) translateY(0)}
+  .snackbar button{
+    min-height:44px;padding:0 14px;border-radius:8px;font-weight:700;font-size:14px;
+    color:#4fc3f7;letter-spacing:.5px;
+  }
+  [data-theme="dark"] .snackbar button{color:#0277bd}
+</style>
+
+<!-- ═══ lišta mockupu ═══ -->
+<div class="mockbar">
+  <div class="label">Návrh A — HA nativní <span>· minimalistický</span></div>
+  <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" aria-label="Přepnout režim">☀️</button>
+</div>
+
+<!-- ═══ simulovaný dashboard ═══ -->
+<div class="dash">
+  <h1>Domácnost</h1>
+  <div class="tiles">
+    <button class="tile primary" onclick="openPopup()">
+      <div class="ticon">🧊</div>
+      <div><div class="tname">Mrazák</div><div class="tstate" id="tileCount">9 položek</div></div>
+    </button>
+    <div class="tile dim"><div class="ticon">💡</div><div><div class="tname">Světla kuchyň</div><div class="tstate">Vypnuto</div></div></div>
+    <div class="tile dim"><div class="ticon">🌡️</div><div><div class="tname">Termostat</div><div class="tstate">21,5 °C</div></div></div>
+    <div class="tile dim"><div class="ticon">🚪</div><div><div class="tname">Vchodové dveře</div><div class="tstate">Zavřeno</div></div></div>
+    <div class="tile dim"><div class="ticon">🌤️</div><div><div class="tname">Počasí</div><div class="tstate">24 °C · jasno</div></div></div>
+    <div class="tile dim"><div class="ticon">🔌</div><div><div class="tname">Spotřeba</div><div class="tstate">412 W</div></div></div>
+  </div>
+</div>
+
+<!-- ═══ popup ═══ -->
+<div class="overlay" id="overlay">
+  <div class="dialog" role="dialog" aria-modal="true">
+
+    <div class="dlg-head">
+      <button class="icon-btn" id="backBtn" onclick="goBack()" style="display:none" aria-label="Zpět">
+        <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      </button>
+      <h2 id="dlgTitle">Mrazák</h2>
+      <button class="icon-btn" onclick="closePopup()" aria-label="Zavřít">
+        <svg viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+      </button>
+    </div>
+
+    <div class="dlg-body">
+
+      <!-- 1 · SEZNAM -->
+      <div class="screen active" id="scr-list">
+        <div class="chips" id="filterChips"></div>
+        <div class="items" id="itemList"></div>
+      </div>
+
+      <!-- 2 · VÝBĚR PRODUKTU -->
+      <div class="screen" id="scr-pick">
+        <div class="pick" id="pickBody"></div>
+      </div>
+
+      <!-- 3 · FORMULÁŘ -->
+      <div class="screen" id="scr-form">
+        <div class="form">
+          <div id="customNameWrap" style="display:none">
+            <div class="f-label">Název</div>
+            <input class="field" id="customName" placeholder="Např. Králík, žebra…">
+          </div>
+          <div class="f-label">Hmotnost jednoho balíčku</div>
+          <div class="w-chips" id="weightChips"></div>
+          <div style="margin-top:10px">
+            <input class="field" id="customWeight" type="number" inputmode="numeric" min="1"
+                   placeholder="Vlastní hmotnost v gramech (nepovinné)" oninput="clearWeightChips()">
+          </div>
+          <div class="f-label" id="countLabel">Počet balíčků</div>
+          <div class="stepper" id="countRow">
+            <button class="step-btn" onclick="stepCount(-1)" aria-label="Méně">−</button>
+            <div class="step-val" id="countVal">1</div>
+            <button class="step-btn" onclick="stepCount(1)" aria-label="Více">+</button>
+          </div>
+          <div class="row2">
+            <div>
+              <div class="f-label">Měsíc zamražení</div>
+              <select class="field" id="selMonth"></select>
+            </div>
+            <div>
+              <div class="f-label">Rok</div>
+              <select class="field" id="selYear"></select>
+            </div>
+          </div>
+          <div class="f-label">Poznámka (nepovinné)</div>
+          <input class="field" id="noteField" placeholder="Např. od Nováků, na guláš…">
+        </div>
+      </div>
+
+      <!-- 4 · DIALOG VYJMUTÍ -->
+      <div class="screen" id="scr-remove">
+        <div class="remove-info">
+          <div class="re" id="removeEmoji">🍗</div>
+          <div class="rq" id="removeQuestion"></div>
+        </div>
+        <div class="remove-actions">
+          <button class="btn tonal" onclick="removeWhole()">VYJMOUT CELÉ</button>
+          <button class="btn tonal" id="btnHalf" onclick="removeHalf()">VYJMOUT POLOVINU</button>
+          <button class="btn tonal" id="btnQty" onclick="showQty()">ZADAT MNOŽSTVÍ</button>
+          <button class="btn tonal" onclick="editItem()">UPRAVIT</button>
+          <button class="btn plain" onclick="showScreen('list')">ZRUŠIT</button>
+        </div>
+      </div>
+
+      <!-- 4b · ZADAT MNOŽSTVÍ -->
+      <div class="screen" id="scr-qty">
+        <div class="qty-box">
+          <div class="qty-cur" id="qtyCurrent">Aktuálně v mrazáku: 500 g</div>
+          <input class="qty-input" id="qtyInput" type="number" inputmode="numeric" min="1"
+                 placeholder="0" oninput="updateQtyPreview()">
+          <div class="qty-preview" id="qtyPreview">Po vyjmutí zůstane: —</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- patičky -->
+    <div class="dlg-foot" id="foot-list">
+      <button class="btn primary" onclick="openPick()">＋&nbsp;&nbsp;PŘIDAT</button>
+    </div>
+    <div class="dlg-foot" id="foot-form" style="display:none">
+      <button class="btn primary" id="formSubmit" onclick="submitForm()">PŘIDAT DO MRAZÁKU</button>
+      <button class="btn plain" onclick="showScreen('list')">ZRUŠIT</button>
+    </div>
+    <div class="dlg-foot" id="foot-qty" style="display:none">
+      <button class="btn primary" onclick="confirmQty()">POTVRDIT</button>
+      <button class="btn plain" onclick="showScreen('remove')">ZRUŠIT</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ snackbar ═══ -->
+<div class="snackbar" id="snackbar">
+  <span>Položka byla vyjmuta</span>
+  <button onclick="undoRemove()">VRÁTIT ZPĚT</button>
+</div>
+
+<script>
+'use strict';
+/* ── data ──────────────────────────────────── */
+const NOW = {y:2026, m:7};                       /* červenec 2026 */
+const CAT_EMOJI = {'Kuřecí':'🍗','Vepřové':'🐷','Hovězí':'🐮','Ryby':'🐟','Ostatní':'🧊'};
+const MONTHS = ['Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
+
+let nextId = 100;
+let items = [
+  {id:1, name:'Losos filet',        cat:'Ryby',    m:9,  y:2025, g:400,  note:''},
+  {id:2, name:'Vepřová krkovice',   cat:'Vepřové', m:11, y:2025, g:800,  note:''},
+  {id:3, name:'Kuřecí stehna',      cat:'Kuřecí',  m:1,  y:2026, g:1000, note:''},
+  {id:4, name:'Hovězí mleté',       cat:'Hovězí',  m:2,  y:2026, g:500,  note:''},
+  {id:5, name:'Vepřová panenka',    cat:'Vepřové', m:3,  y:2026, g:null, note:''},
+  {id:6, name:'Hovězí na guláš',    cat:'Hovězí',  m:4,  y:2026, g:600,  note:'od Nováků'},
+  {id:7, name:'Treska filety',      cat:'Ryby',    m:5,  y:2026, g:300,  note:''},
+  {id:8, name:'Kuřecí prsa',        cat:'Kuřecí',  m:6,  y:2026, g:500,  note:''},
+  {id:9, name:'Zeleninová směs',    cat:'Ostatní', m:6,  y:2026, g:750,  note:'na polévku'},
+];
+
+const PRODUCTS = {
+  'Kuřecí':  [['Prsa','Kuřecí prsa'],['Stehna','Kuřecí stehna'],['Křídla','Kuřecí křídla'],['Celé kuře','Celé kuře']],
+  'Vepřové': [['Kýta','Vepřová kýta'],['Krkovice','Vepřová krkovice'],['Panenka','Vepřová panenka']],
+  'Hovězí':  [['Mleté','Hovězí mleté'],['Guláš','Hovězí na guláš']],
+  'Ryby':    [['Losos','Losos filet'],['Treska','Treska filety']],
+  'Ostatní': [['Zeleninová směs','Zeleninová směs'],['Pečivo','Pečivo'],['Jiné…','__custom__']],
+};
+
+/* ── stav UI ───────────────────────────────── */
+let filter = 'Vše';
+let currentScreen = 'list';
+let formCtx = null;          /* {mode:'add'|'edit', name, cat, id?} */
+let removeCtx = null;        /* id položky pro vyjmutí */
+let undoBackup = null;
+let snackTimer = null;
+
+/* ── pomocné ───────────────────────────────── */
+const $ = id => document.getElementById(id);
+const monthsOld = it => (NOW.y - it.y) * 12 + (NOW.m - it.m);
+const fmtDate = it => String(it.m).padStart(2,'0') + '/' + it.y;
+const fmtWeight = g => g == null ? 'hmotnost neuvedena' : g + ' g';
+const byId = id => items.find(i => i.id === id);
+
+function toggleTheme(){
+  const dark = document.documentElement.dataset.theme === 'dark';
+  document.documentElement.dataset.theme = dark ? '' : 'dark';
+  $('themeBtn').textContent = dark ? '☀️' : '🌙';
+}
+
+/* ── popup / navigace ──────────────────────── */
+function openPopup(){ filter='Vše'; renderList(); showScreen('list'); $('overlay').classList.add('open'); }
+function closePopup(){ $('overlay').classList.remove('open'); }
+$('overlay').addEventListener('click', e => { if(e.target === $('overlay')) closePopup(); });
+
+function showScreen(name){
+  currentScreen = name;
+  ['list','pick','form','remove','qty'].forEach(s =>
+    $('scr-'+s).classList.toggle('active', s === name));
+  $('foot-list').style.display = name === 'list' ? '' : 'none';
+  $('foot-form').style.display = name === 'form' ? '' : 'none';
+  $('foot-qty').style.display  = name === 'qty'  ? '' : 'none';
+  $('backBtn').style.display   = name === 'list' ? 'none' : '';
+  const titles = {list:'Mrazák', pick:'Co chcete přidat?', form:'', remove:'Vyjmout položku', qty:'Zadat množství'};
+  if(name === 'form'){
+    titles.form = (formCtx.mode === 'edit' ? 'Upravit: ' : 'Přidat: ') +
+                  (formCtx.name === '__custom__' ? 'Jiné' : formCtx.name);
+  }
+  $('dlgTitle').textContent = titles[name];
+}
+function goBack(){
+  if(currentScreen === 'qty') showScreen('remove');
+  else if(currentScreen === 'form' && formCtx && formCtx.mode === 'add') showScreen('pick');
+  else showScreen('list');
+}
+
+/* ── 1 · seznam ────────────────────────────── */
+function renderList(){
+  /* chipy */
+  const cats = ['Vše','Kuřecí','Vepřové','Hovězí','Ryby','Ostatní'];
+  $('filterChips').innerHTML = cats.map(c =>
+    `<button class="chip${c===filter?' on':''}" onclick="setFilter('${c}')">${c}</button>`).join('');
+
+  /* položky */
+  const list = items
+    .filter(i => filter === 'Vše' || i.cat === filter)
+    .sort((a,b) => (a.y*12+a.m) - (b.y*12+b.m));
+
+  if(!list.length){
+    $('itemList').innerHTML = `<div class="empty">Žádné položky v této kategorii.</div>`;
+  } else {
+    $('itemList').innerHTML = list.map(i => {
+      const age = monthsOld(i);
+      const cls = age >= 9 ? 'danger' : age >= 6 ? 'warn' : '';
+      const badge = cls ? `<span class="age-badge ${cls}">${age} měs.</span>` : '';
+      const note = i.note ? `<div class="item-note">${i.note}</div>` : '';
+      return `<button class="item-row ${cls}" onclick="openRemove(${i.id})">
+        <span class="emoji">${CAT_EMOJI[i.cat]}</span>
+        <span class="item-main">
+          <div class="item-name">${i.name}</div>
+          <div class="item-sub">${fmtDate(i)} · ${fmtWeight(i.g)}</div>${note}
+        </span>${badge}
+      </button>`;
+    }).join('');
+  }
+  const n = items.length;
+  $('tileCount').textContent = n + ' ' + (n === 1 ? 'položka' : n >= 2 && n <= 4 ? 'položky' : 'položek');
+}
+function setFilter(c){ filter = c; renderList(); }
+
+/* ── 2 · výběr produktu ────────────────────── */
+function openPick(){
+  $('pickBody').innerHTML = Object.entries(PRODUCTS).map(([cat,list]) =>
+    `<div class="cat-label">${CAT_EMOJI[cat]} ${cat}</div>
+     <div class="cat-grid">` +
+     list.map(([label,full]) =>
+       `<button class="prod-tile" onclick="pickProduct('${cat}','${full}')">
+          <span class="pe">${full==='__custom__' ? '✏️' : CAT_EMOJI[cat]}</span>${label}
+        </button>`).join('') +
+     `</div>`).join('');
+  showScreen('pick');
+}
+function pickProduct(cat, full){
+  formCtx = {mode:'add', cat, name: full};
+  openForm();
+}
+
+/* ── 3 · formulář ──────────────────────────── */
+function openForm(prefill){
+  /* hmotnostní chipy */
+  const chips = [250,500,750,1000];
+  $('weightChips').innerHTML = chips.map(g =>
+    `<button class="w-chip" data-g="${g}" onclick="pickWeight(this)">${g} g</button>`).join('');
+  $('customWeight').value = '';
+  $('noteField').value = '';
+  $('countVal').textContent = '1';
+
+  /* selecty */
+  $('selMonth').innerHTML = MONTHS.map((m,i) =>
+    `<option value="${i+1}"${i+1===NOW.m?' selected':''}>${m}</option>`).join('');
+  $('selYear').innerHTML = [2025,2026,2027].map(y =>
+    `<option${y===2026?' selected':''}>${y}</option>`).join('');
+
+  const isCustom = formCtx.name === '__custom__';
+  $('customNameWrap').style.display = isCustom ? '' : 'none';
+  $('customName').value = '';
+
+  const isEdit = formCtx.mode === 'edit';
+  $('countLabel').style.display = isEdit ? 'none' : '';
+  $('countRow').style.display   = isEdit ? 'none' : '';
+  $('formSubmit').textContent   = isEdit ? 'ULOŽIT ZMĚNY' : 'PŘIDAT DO MRAZÁKU';
+
+  if(prefill){
+    if(prefill.g != null){
+      const hit = [...$('weightChips').children].find(c => +c.dataset.g === prefill.g);
+      if(hit) hit.classList.add('on'); else $('customWeight').value = prefill.g;
+    }
+    $('selMonth').value = prefill.m;
+    $('selYear').value = prefill.y;
+    $('noteField').value = prefill.note || '';
+  }
+  showScreen('form');
+}
+function pickWeight(el){
+  const was = el.classList.contains('on');
+  clearWeightChips();
+  if(!was){ el.classList.add('on'); $('customWeight').value = ''; }
+}
+function clearWeightChips(){
+  [...$('weightChips').children].forEach(c => c.classList.remove('on'));
+}
+function stepCount(d){
+  const v = Math.min(20, Math.max(1, +$('countVal').textContent + d));
+  $('countVal').textContent = v;
+}
+function getFormWeight(){
+  const on = [...$('weightChips').children].find(c => c.classList.contains('on'));
+  if(on) return +on.dataset.g;
+  const custom = parseInt($('customWeight').value, 10);
+  return custom > 0 ? custom : null;
+}
+function submitForm(){
+  const g = getFormWeight();
+  const m = +$('selMonth').value, y = +$('selYear').value;
+  const note = $('noteField').value.trim();
+  let name = formCtx.name === '__custom__' ? $('customName').value.trim() : formCtx.name;
+  if(!name) name = 'Jiné';
+
+  if(formCtx.mode === 'edit'){
+    const it = byId(formCtx.id);
+    if(it) Object.assign(it, {g, m, y, note});
+  } else {
+    const count = +$('countVal').textContent;
+    for(let k = 0; k < count; k++)
+      items.push({id:nextId++, name, cat:formCtx.cat, m, y, g, note});
+  }
+  renderList();
+  showScreen('list');
+}
+
+/* ── 4 · vyjmutí ───────────────────────────── */
+function openRemove(id){
+  removeCtx = id;
+  const it = byId(id);
+  $('removeEmoji').textContent = CAT_EMOJI[it.cat];
+  $('removeQuestion').innerHTML =
+    `Vyjmout <b>${it.name}</b> · ${fmtDate(it)} · ${fmtWeight(it.g)}?`;
+  const hasW = it.g != null;
+  $('btnHalf').style.display = hasW ? '' : 'none';
+  $('btnQty').style.display  = hasW ? '' : 'none';
+  if(hasW) $('btnHalf').textContent = 'VYJMOUT POLOVINU – ' + Math.round(it.g/2) + ' g';
+  showScreen('remove');
+}
+function removeWhole(){
+  const idx = items.findIndex(i => i.id === removeCtx);
+  if(idx < 0) return;
+  undoBackup = items[idx];
+  items.splice(idx, 1);
+  renderList();
+  showScreen('list');
+  showSnackbar();
+}
+function removeHalf(){
+  const it = byId(removeCtx);
+  if(it && it.g != null){ it.g = Math.round(it.g/2); }
+  renderList();
+  showScreen('list');
+}
+function editItem(){
+  const it = byId(removeCtx);
+  formCtx = {mode:'edit', id: it.id, cat: it.cat, name: it.name};
+  openForm(it);
+}
+
+/* ── 4b · zadat množství ───────────────────── */
+function showQty(){
+  const it = byId(removeCtx);
+  $('qtyCurrent').textContent = 'Aktuálně v mrazáku: ' + it.g + ' g';
+  $('qtyInput').value = '';
+  updateQtyPreview();
+  showScreen('qty');
+  setTimeout(() => $('qtyInput').focus(), 50);
+}
+function updateQtyPreview(){
+  const it = byId(removeCtx);
+  const v = parseInt($('qtyInput').value, 10);
+  const p = $('qtyPreview');
+  if(!(v > 0)){ p.className = 'qty-preview'; p.textContent = 'Po vyjmutí zůstane: —'; return; }
+  if(v >= it.g){ p.className = 'qty-preview bad';
+    p.textContent = v > it.g ? 'Tolik v mrazáku není (' + it.g + ' g)' : 'Vyjme se celá položka'; return; }
+  p.className = 'qty-preview';
+  p.textContent = 'Po vyjmutí zůstane: ' + (it.g - v) + ' g';
+}
+function confirmQty(){
+  const it = byId(removeCtx);
+  const v = parseInt($('qtyInput').value, 10);
+  if(!(v > 0) || v > it.g) return;
+  if(v === it.g){ removeWhole(); return; }
+  it.g -= v;
+  renderList();
+  showScreen('list');
+}
+
+/* ── 5 · snackbar / undo ───────────────────── */
+function showSnackbar(){
+  clearTimeout(snackTimer);
+  $('snackbar').classList.add('show');
+  snackTimer = setTimeout(hideSnackbar, 6000);
+}
+function hideSnackbar(){
+  $('snackbar').classList.remove('show');
+  undoBackup = null;
+}
+function undoRemove(){
+  if(undoBackup){ items.push(undoBackup); renderList(); }
+  clearTimeout(snackTimer);
+  $('snackbar').classList.remove('show');
+  undoBackup = null;
+}
+
+/* init */
+renderList();
+</script>

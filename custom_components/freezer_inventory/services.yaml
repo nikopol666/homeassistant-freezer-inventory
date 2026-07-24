@@ -1,0 +1,252 @@
+add_item:
+  fields:
+    freezer_id:
+      required: true
+      example: main_freezer
+      selector:
+        text:
+    product_id:
+      required: false
+      example: chicken_breast
+      selector:
+        text:
+    product_name:
+      required: false
+      example: Kuřecí prsa
+      selector:
+        text:
+    month:
+      required: true
+      example: 7
+      selector:
+        number:
+          min: 1
+          max: 12
+          mode: box
+    year:
+      required: true
+      example: 2026
+      selector:
+        number:
+          min: 2000
+          max: 2100
+          mode: box
+    weight:
+      required: false
+      example: 500
+      selector:
+        number:
+          min: 1
+          max: 100000
+          step: 1
+          unit_of_measurement: g
+          mode: box
+    pieces:
+      required: false
+      example: 6
+      selector:
+        number:
+          min: 1
+          max: 1000
+          step: 1
+          mode: box
+    note:
+      required: false
+      example: Na řízky
+      selector:
+        text:
+    quantity:
+      required: false
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 50
+          mode: box
+
+remove_item:
+  fields:
+    freezer_id:
+      required: true
+      example: main_freezer
+      selector:
+        text:
+    item_id:
+      required: true
+      selector:
+        text:
+
+remove_half:
+  fields:
+    freezer_id:
+      required: true
+      example: main_freezer
+      selector:
+        text:
+    item_id:
+      required: true
+      selector:
+        text:
+
+remove_amount:
+  fields:
+    freezer_id:
+      required: true
+      example: main_freezer
+      selector:
+        text:
+    item_id:
+      required: true
+      selector:
+        text:
+    amount:
+      required: false
+      example: 150
+      selector:
+        number:
+          min: 1
+          max: 100000
+          step: 1
+          unit_of_measurement: g
+          mode: box
+    pieces:
+      required: false
+      example: 2
+      selector:
+        number:
+          min: 1
+          max: 1000
+          step: 1
+          mode: box
+
+update_item:
+  fields:
+    freezer_id:
+      required: true
+      example: main_freezer
+      selector:
+        text:
+    item_id:
+      required: true
+      selector:
+        text:
+    product_id:
+      required: false
+      selector:
+        text:
+    product_name:
+      required: false
+      selector:
+        text:
+    month:
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 12
+          mode: box
+    year:
+      required: false
+      selector:
+        number:
+          min: 2000
+          max: 2100
+          mode: box
+    weight:
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 100000
+          step: 1
+          unit_of_measurement: g
+          mode: box
+    original_weight:
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 100000
+          step: 1
+          unit_of_measurement: g
+          mode: box
+    pieces:
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 1000
+          step: 1
+          mode: box
+    original_pieces:
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 1000
+          step: 1
+          mode: box
+    note:
+      required: false
+      selector:
+        text:
+
+move_item:
+  fields:
+    item_id:
+      required: true
+      selector:
+        text:
+    source_freezer_id:
+      required: true
+      example: main_freezer
+      selector:
+        text:
+    target_freezer_id:
+      required: true
+      example: basement_freezer
+      selector:
+        text:
+
+add_product:
+  fields:
+    name:
+      required: true
+      example: Kuřecí stripsy
+      selector:
+        text:
+    category_id:
+      required: false
+      example: chicken
+      selector:
+        text:
+    icon:
+      required: false
+      example: mdi:food-drumstick
+      selector:
+        icon:
+    default_weight:
+      required: false
+      example: 500
+      selector:
+        number:
+          min: 1
+          max: 100000
+          step: 1
+          unit_of_measurement: g
+          mode: box
+    quick_weights:
+      required: false
+      example: "[250, 500, 750, 1000]"
+      selector:
+        object:
+    quick_pieces:
+      required: false
+      example: "[1, 2, 3, 4, 6]"
+      selector:
+        object:
+    ask_for_weight:
+      required: false
+      default: true
+      selector:
+        boolean:

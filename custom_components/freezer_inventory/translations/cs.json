@@ -1,0 +1,303 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Freezer Inventory",
+        "description": "Nastavte evidenci mrazáku. Vše lze později změnit.",
+        "data": {
+          "language": "Jazyk rozhraní",
+          "freezer_name": "Název mrazáku",
+          "create_defaults": "Vytvořit výchozí produkty",
+          "default_unit": "Výchozí jednotka hmotnosti"
+        }
+      }
+    },
+    "error": {
+      "invalid_name": "Název nesmí být prázdný."
+    },
+    "abort": {
+      "single_instance_allowed": "Freezer Inventory je již nastaven."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Možnosti Freezer Inventory",
+        "data": {
+          "language": "Jazyk rozhraní",
+          "freezer_name": "Název mrazáku",
+          "old_months": "Zvýraznit položky starší než (měsíců)"
+        }
+      }
+    },
+    "error": {
+      "invalid_name": "Název nesmí být prázdný."
+    }
+  },
+  "selector": {
+    "language": {
+      "options": {
+        "cs": "Čeština",
+        "en": "English"
+      }
+    },
+    "default_unit": {
+      "options": {
+        "g": "Gramy (g)",
+        "kg": "Kilogramy (kg)"
+      }
+    }
+  },
+  "services": {
+    "add_item": {
+      "name": "Přidat položku",
+      "description": "Přidá jeden nebo více balíčků do mrazáku.",
+      "fields": {
+        "freezer_id": {
+          "name": "Mrazák",
+          "description": "ID mrazáku, např. main_freezer."
+        },
+        "product_id": {
+          "name": "ID produktu",
+          "description": "ID předvoleného produktu. Povinné je buď toto, nebo název produktu."
+        },
+        "product_name": {
+          "name": "Název produktu",
+          "description": "Vlastní název produktu. Povinné je buď toto, nebo ID produktu."
+        },
+        "month": {
+          "name": "Měsíc",
+          "description": "Měsíc zamrazení (1–12)."
+        },
+        "year": {
+          "name": "Rok",
+          "description": "Rok zamrazení."
+        },
+        "weight": {
+          "name": "Hmotnost",
+          "description": "Hmotnost v gramech (nepovinné)."
+        },
+        "note": {
+          "name": "Poznámka",
+          "description": "Volitelná poznámka."
+        },
+        "quantity": {
+          "name": "Počet",
+          "description": "Počet stejných balíčků k přidání (výchozí 1)."
+        },
+        "pieces": {
+          "name": "Kusy",
+          "description": "Počet kusů v balíčku (nepovinné)."
+        }
+      }
+    },
+    "remove_item": {
+      "name": "Vyjmout položku",
+      "description": "Vyjme celou položku z mrazáku.",
+      "fields": {
+        "freezer_id": {
+          "name": "Mrazák",
+          "description": "ID mrazáku."
+        },
+        "item_id": {
+          "name": "ID položky",
+          "description": "Unikátní ID položky."
+        }
+      }
+    },
+    "remove_half": {
+      "name": "Vyjmout polovinu",
+      "description": "Sníží aktuální hmotnost položky na polovinu.",
+      "fields": {
+        "freezer_id": {
+          "name": "Mrazák",
+          "description": "ID mrazáku."
+        },
+        "item_id": {
+          "name": "ID položky",
+          "description": "Unikátní ID položky."
+        }
+      }
+    },
+    "remove_amount": {
+      "name": "Vyjmout množství",
+      "description": "Vyjme konkrétní hmotnost z položky. Vyjmutí celé hmotnosti položku odstraní.",
+      "fields": {
+        "freezer_id": {
+          "name": "Mrazák",
+          "description": "ID mrazáku."
+        },
+        "item_id": {
+          "name": "ID položky",
+          "description": "Unikátní ID položky."
+        },
+        "amount": {
+          "name": "Množství",
+          "description": "Hmotnost k vyjmutí v gramech."
+        },
+        "pieces": {
+          "name": "Kusy",
+          "description": "Počet kusů k vyjmutí."
+        }
+      }
+    },
+    "update_item": {
+      "name": "Upravit položku",
+      "description": "Aktualizuje pouze předaná pole položky.",
+      "fields": {
+        "freezer_id": {
+          "name": "Mrazák",
+          "description": "ID mrazáku."
+        },
+        "item_id": {
+          "name": "ID položky",
+          "description": "Unikátní ID položky."
+        },
+        "product_id": {
+          "name": "ID produktu",
+          "description": "Nové ID předvoleného produktu."
+        },
+        "product_name": {
+          "name": "Název produktu",
+          "description": "Nový název produktu."
+        },
+        "month": {
+          "name": "Měsíc",
+          "description": "Nový měsíc (1–12)."
+        },
+        "year": {
+          "name": "Rok",
+          "description": "Nový rok."
+        },
+        "weight": {
+          "name": "Hmotnost",
+          "description": "Nová aktuální hmotnost v gramech."
+        },
+        "original_weight": {
+          "name": "Původní hmotnost",
+          "description": "Nová původní hmotnost v gramech."
+        },
+        "note": {
+          "name": "Poznámka",
+          "description": "Nová poznámka."
+        },
+        "pieces": {
+          "name": "Kusy",
+          "description": "Nový počet kusů."
+        },
+        "original_pieces": {
+          "name": "Původní počet kusů",
+          "description": "Nový původní počet kusů."
+        }
+      }
+    },
+    "move_item": {
+      "name": "Přesunout položku",
+      "description": "Přesune položku mezi mrazáky.",
+      "fields": {
+        "item_id": {
+          "name": "ID položky",
+          "description": "Unikátní ID položky."
+        },
+        "source_freezer_id": {
+          "name": "Zdrojový mrazák",
+          "description": "ID zdrojového mrazáku."
+        },
+        "target_freezer_id": {
+          "name": "Cílový mrazák",
+          "description": "ID cílového mrazáku."
+        }
+      }
+    },
+    "add_product": {
+      "name": "Přidat předvolený produkt",
+      "description": "Přidá produkt do nabídky předvoleb.",
+      "fields": {
+        "name": {
+          "name": "Název",
+          "description": "Název produktu."
+        },
+        "category_id": {
+          "name": "Kategorie",
+          "description": "ID existující kategorie."
+        },
+        "icon": {
+          "name": "Ikona",
+          "description": "MDI ikona, např. mdi:food-drumstick."
+        },
+        "default_weight": {
+          "name": "Výchozí hmotnost",
+          "description": "Výchozí hmotnost v gramech."
+        },
+        "quick_weights": {
+          "name": "Rychlé volby hmotnosti",
+          "description": "Seznam rychlých voleb hmotnosti v gramech."
+        },
+        "ask_for_weight": {
+          "name": "Ptát se na hmotnost",
+          "description": "Zda se má při přidávání produktu zobrazovat pole hmotnosti."
+        },
+        "quick_pieces": {
+          "name": "Rychlé volby kusů",
+          "description": "Seznam rychlých voleb počtu kusů."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "freezer_not_found": {
+      "message": "Mrazák \"{freezer_id}\" neexistuje."
+    },
+    "item_not_found": {
+      "message": "Položka už neexistuje."
+    },
+    "item_exists": {
+      "message": "Položka již existuje."
+    },
+    "no_weight": {
+      "message": "Položka nemá zadanou hmotnost."
+    },
+    "not_enough_weight": {
+      "message": "Nelze vyjmout {amount} g. V mrazáku zbývá pouze {weight} g."
+    },
+    "invalid_month": {
+      "message": "Zadaný měsíc není platný."
+    },
+    "invalid_year": {
+      "message": "Zadaný rok není platný."
+    },
+    "invalid_weight": {
+      "message": "Hmotnost musí být kladné číslo."
+    },
+    "invalid_amount": {
+      "message": "Množství musí být kladné číslo."
+    },
+    "invalid_name": {
+      "message": "Název nesmí být prázdný."
+    },
+    "invalid_quantity": {
+      "message": "Počet balíčků není platný."
+    },
+    "product_not_found": {
+      "message": "Produkt \"{product_id}\" neexistuje."
+    },
+    "category_not_found": {
+      "message": "Kategorie \"{category_id}\" neexistuje."
+    },
+    "duplicate_id": {
+      "message": "Toto ID se již používá."
+    },
+    "missing_product": {
+      "message": "Je nutné zadat produkt nebo název produktu."
+    },
+    "no_pieces": {
+      "message": "Položka nemá zadaný počet kusů."
+    },
+    "not_enough_pieces": {
+      "message": "Nelze vyjmout {pieces} ks. Zbývá pouze {count} ks."
+    },
+    "invalid_pieces": {
+      "message": "Počet kusů není platný."
+    }
+  }
+}

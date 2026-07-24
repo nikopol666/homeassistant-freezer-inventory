@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="cs" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Návrh C — Kiosk / vysoký kontrast</title>
+<style>
+/* ============ ZÁKLAD / PROMĚNNÉ ============ */
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+:root {
+  --bg:        #07090c;
+  --bg2:       #0c1116;
+  --surface:   #10161c;
+  --surface2:  #141c23;
+  --line:      #202c35;
+  --line-soft: #182229;
+  --text:      #eef6f9;
+  --dim:       #849aa5;
+  --accent:    #4dd0e1;
+  --accent-dim:#2a6d77;
+  --accent-ink:#03242a;
+  --green:     #58d97b;
+  --orange:    #ffb04d;
+  --red:       #ff6a5c;
+  --red-tint:  rgba(255,106,92,.07);
+  --orange-tint: rgba(255,176,77,.06);
+  --overlay:   rgba(2,6,9,.78);
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  --sans: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+html[data-theme="light"] {
+  --bg:        #e7ecee;
+  --bg2:       #eff3f5;
+  --surface:   #ffffff;
+  --surface2:  #f3f7f8;
+  --line:      #cfdade;
+  --line-soft: #dfe7ea;
+  --text:      #0c1a21;
+  --dim:       #58707b;
+  --accent:    #007c8c;
+  --accent-dim:#8fc6cf;
+  --accent-ink:#ffffff;
+  --green:     #148f43;
+  --orange:    #b35f00;
+  --red:       #cc2f22;
+  --red-tint:  rgba(204,47,34,.07);
+  --orange-tint: rgba(179,95,0,.07);
+  --overlay:   rgba(20,32,38,.55);
+}
+
+html, body { height:100%; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+button { font-family: inherit; cursor: pointer; color: inherit; background: none; border: none; }
+button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+input, select, textarea { font-family: inherit; color: var(--text); }
+
+.mono { font-family: var(--mono); }
+
+/* ============ LIŠTA MOCKUPU ============ */
+.mockbar {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding: 10px 16px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--line);
+  position: sticky; top:0; z-index: 50;
+}
+.mockbar .label {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.mockbar .label b { color: var(--accent); font-weight: 700; }
+.theme-toggle {
+  min-width: 48px; min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 19px;
+  background: var(--surface);
+  display:flex; align-items:center; justify-content:center;
+}
+.theme-toggle:hover { border-color: var(--accent); }
+
+/* ============ SIMULOVANÝ DASHBOARD ============ */
+.dash {
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 28px 20px 60px;
+}
+.dash-head { margin-bottom: 20px; }
+.dash-head h1 { font-size: 22px; font-weight: 800; letter-spacing:.01em; }
+.dash-head .sub {
+  font-family: var(--mono); font-size: 13px; color: var(--dim);
+  margin-top: 4px; letter-spacing:.06em; text-transform: uppercase;
+}
+.tiles {
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+.tile {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px 16px;
+  min-height: 110px;
+  display:flex; flex-direction:column; justify-content:space-between; align-items:flex-start;
+  text-align:left;
+  transition: border-color .12s;
+}
+.tile .ico { font-size: 26px; line-height:1; }
+.tile .t-name { font-size: 16px; font-weight: 700; margin-top: 10px; }
+.tile .t-val { font-family: var(--mono); font-size: 13px; color: var(--dim); margin-top: 2px; }
+.tile.freezer { border-color: var(--accent-dim); }
+.tile.freezer .t-val { color: var(--accent); }
+.tile.freezer:hover, .tile.freezer:active { border-color: var(--accent); }
+.tile.dummy { opacity:.62; cursor: default; }
+
+/* ============ POPUP / OVERLAY ============ */
+.overlay {
+  position: fixed; inset: 0;
+  background: var(--overlay);
+  display: none;
+  align-items: center; justify-content: center;
+  padding: 20px;
+  z-index: 100;
+}
+.overlay.open { display:flex; }
+.popup {
+  width: 100%;
+  max-width: 520px;
+  height: min(780px, 94vh);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  display:flex; flex-direction:column;
+  overflow: hidden;
+}
+@media (max-width: 560px) {
+  .overlay { padding: 0; }
+  .popup { max-width: 100%; height: 100%; border-radius: 0; border: none; }
+}
+
+/* obrazovky */
+.screen { display:none; flex-direction:column; height:100%; min-height:0; }
+.screen.active { display:flex; }
+
+.scr-head {
+  display:flex; align-items:center; gap: 10px;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--line);
+  flex: none;
+}
+.scr-head .titles { flex:1; min-width:0; }
+.scr-head h2 {
+  font-size: 24px; font-weight: 800; letter-spacing: .01em;
+  white-space: nowrap; overflow:hidden; text-overflow: ellipsis;
+}
+.scr-head .subtitle {
+  font-family: var(--mono); font-size: 12px; color: var(--dim);
+  letter-spacing: .09em; text-transform: uppercase; margin-top: 3px;
+}
+.icon-btn {
+  width: 48px; height: 48px; flex:none;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 20px;
+  display:flex; align-items:center; justify-content:center;
+  color: var(--dim);
+}
+.icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.scr-body { flex:1; overflow-y:auto; min-height:0; }
+.scr-foot {
+  flex:none; padding: 12px 16px 16px;
+  border-top: 1px solid var(--line);
+  display:flex; flex-direction:column; gap: 10px;
+}
+
+/* ============ TLAČÍTKA ============ */
+.btn {
+  min-height: 54px;
+  border-radius: 10px;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  display:flex; align-items:center; justify-content:center; gap: 8px;
+  padding: 0 18px;
+  width: 100%;
+}
+.btn-primary { background: var(--accent); color: var(--accent-ink); }
+.btn-primary:hover { filter: brightness(1.08); }
+.btn-ghost { border: 1px solid var(--line); color: var(--text); background: var(--surface2); }
+.btn-ghost:hover { border-color: var(--accent); }
+.btn-quiet { color: var(--dim); font-weight: 700; min-height: 48px; }
+.btn-quiet:hover { color: var(--text); }
+.btn-danger { border: 1px solid var(--red); color: var(--red); background: transparent; }
+.btn-danger:hover { background: var(--red-tint); }
+.btn .sub-label { font-family: var(--mono); font-weight: 500; font-size: 13px; letter-spacing: 0; opacity:.8; }
+
+/* ============ CHIPY FILTRŮ ============ */
+.chips {
+  display:flex; gap: 8px;
+  padding: 12px 16px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--line-soft);
+  flex: none;
+  scrollbar-width: none;
+}
+.chips::-webkit-scrollbar { display:none; }
+.chip {
+  flex: none;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--dim);
+  display:flex; align-items:center;
+}
+.chip.on {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+/* ============ SEZNAM POLOŽEK ============ */
+.item-list { list-style: none; }
+.item-row {
+  width:100%;
+  display:flex; align-items:center; gap: 14px;
+  min-height: 72px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line-soft);
+  text-align:left;
+}
+.item-row:hover { background: var(--surface2); }
+.item-row.age-red { background: var(--red-tint); box-shadow: inset 3px 0 0 var(--red); }
+.item-row.age-orange { background: var(--orange-tint); box-shadow: inset 3px 0 0 var(--orange); }
+.item-emoji { font-size: 24px; flex: none; width: 32px; text-align:center; }
+.item-main { flex: 1; min-width: 0; }
+.item-name {
+  font-size: 21px; font-weight: 800; letter-spacing:.005em;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.item-meta {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--dim);
+  margin-top: 3px;
+  letter-spacing: .02em;
+}
+.item-meta .w { color: var(--text); }
+.item-note {
+  font-size: 13px; color: var(--dim); margin-top: 2px; font-style: italic;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.item-age {
+  flex:none;
+  display:flex; flex-direction:column; align-items:center; gap: 5px;
+  min-width: 58px;
+}
+.age-dot { width: 12px; height: 12px; border-radius: 50%; }
+.age-txt { font-family: var(--mono); font-size: 12.5px; letter-spacing:.03em; }
+.c-green  { background: var(--green); }  .t-green  { color: var(--green); }
+.c-orange { background: var(--orange); } .t-orange { color: var(--orange); }
+.c-red    { background: var(--red); }    .t-red    { color: var(--red); }
+.empty-msg { padding: 40px 20px; text-align:center; color: var(--dim); font-size: 16px; }
+
+/* ============ VÝBĚR PRODUKTU ============ */
+.cat-block { padding: 14px 16px 4px; }
+.cat-label {
+  font-family: var(--mono); font-size: 12.5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .12em;
+  color: var(--accent);
+  display:flex; align-items:center; gap: 8px;
+  margin-bottom: 10px;
+}
+.cat-label::after { content:""; flex:1; height:1px; background: var(--line-soft); }
+.prod-grid {
+  display:grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+  margin-bottom: 8px;
+}
+.prod-tile {
+  min-height: 66px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface2);
+  font-size: 17px; font-weight: 700;
+  display:flex; align-items:center; justify-content:center; gap: 8px;
+  padding: 8px 12px;
+  text-align:center;
+}
+.prod-tile:hover { border-color: var(--accent); color: var(--accent); }
+.prod-tile.other { border-style: dashed; color: var(--dim); }
+.prod-tile.other:hover { color: var(--accent); }
+
+/* ============ FORMULÁŘ ============ */
+.form-wrap { padding: 16px; display:flex; flex-direction:column; gap: 20px; }
+.f-group { display:flex; flex-direction:column; gap: 9px; }
+.f-label {
+  font-family: var(--mono); font-size: 12.5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .12em; color: var(--dim);
+}
+.w-chips { display:flex; gap: 8px; flex-wrap: wrap; }
+.w-chip {
+  min-height: 50px; min-width: 76px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-family: var(--mono);
+  font-size: 16px; font-weight: 600;
+  color: var(--dim);
+  display:flex; align-items:center; justify-content:center;
+  flex: 1;
+}
+.w-chip.on {
+  border-color: var(--accent); color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.f-input, .f-select {
+  min-height: 52px;
+  background: var(--surface2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0 14px;
+  font-size: 17px;
+  width: 100%;
+}
+.f-input::placeholder { color: var(--dim); opacity:.7; }
+.f-input:focus, .f-select:focus { border-color: var(--accent); outline: none; }
+.f-input.mono-in { font-family: var(--mono); }
+.f-row2 { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.f-select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--dim) 50%),
+                    linear-gradient(135deg, var(--dim) 50%, transparent 50%);
+  background-position: calc(100% - 20px) 55%, calc(100% - 14px) 55%;
+  background-size: 6px 6px;
+  background-repeat: no-repeat;
+}
+.stepper {
+  display:flex; align-items:center; gap: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow:hidden;
+  width: max-content;
+}
+.stepper button {
+  width: 60px; height: 54px;
+  font-size: 26px; font-weight: 700;
+  color: var(--accent);
+  background: var(--surface2);
+}
+.stepper button:hover { background: color-mix(in srgb, var(--accent) 12%, var(--surface2)); }
+.stepper .val {
+  width: 76px; text-align:center;
+  font-family: var(--mono); font-size: 22px; font-weight: 700;
+  border-left: 1px solid var(--line); border-right: 1px solid var(--line);
+  align-self: stretch; display:flex; align-items:center; justify-content:center;
+}
+
+/* ============ DIALOG VYJMUTÍ ============ */
+.rm-summary {
+  padding: 22px 20px;
+  border-bottom: 1px solid var(--line);
+  text-align:center;
+}
+.rm-summary .rm-emoji { font-size: 40px; }
+.rm-summary .rm-name { font-size: 24px; font-weight: 800; margin-top: 8px; }
+.rm-summary .rm-meta {
+  font-family: var(--mono); font-size: 15px; color: var(--dim); margin-top: 5px;
+  letter-spacing:.03em;
+}
+.rm-summary .rm-note { font-size: 14px; font-style: italic; color: var(--dim); margin-top: 4px; }
+.rm-actions { padding: 16px; display:flex; flex-direction:column; gap: 10px; }
+
+/* ============ ZADAT MNOŽSTVÍ ============ */
+.amt-wrap { padding: 20px 16px; display:flex; flex-direction:column; gap: 18px; }
+.amt-info {
+  font-family: var(--mono); font-size: 15px; color: var(--dim);
+  letter-spacing:.03em;
+}
+.amt-info b { color: var(--text); font-weight: 700; }
+.amt-input-row { display:flex; align-items:center; gap: 12px; }
+.amt-input {
+  flex: 1;
+  min-height: 64px;
+  font-family: var(--mono);
+  font-size: 28px; font-weight: 700;
+  text-align: center;
+  background: var(--surface2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.amt-input:focus { border-color: var(--accent); outline:none; }
+.amt-unit { font-family: var(--mono); font-size: 20px; color: var(--dim); }
+.amt-preview {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px;
+  font-family: var(--mono);
+  font-size: 16px;
+  text-align: center;
+  letter-spacing:.02em;
+}
+.amt-preview b { color: var(--accent); font-size: 20px; }
+.amt-preview.neg b { color: var(--red); }
+
+/* ============ SNACKBAR ============ */
+.snackbar {
+  position: fixed;
+  left: 50%; bottom: 24px;
+  transform: translate(-50%, 140%);
+  background: var(--text);
+  color: var(--bg);
+  border-radius: 10px;
+  padding: 10px 12px 10px 18px;
+  display:flex; align-items:center; gap: 14px;
+  font-size: 15px; font-weight: 600;
+  max-width: min(92vw, 480px);
+  z-index: 200;
+  transition: transform .22s ease;
+}
+.snackbar.show { transform: translate(-50%, 0); }
+.snackbar button {
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 14.5px;
+  letter-spacing: .07em;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 8px;
+  flex: none;
+}
+html[data-theme="light"] .snackbar button { color: #4dd0e1; }
+</style>
+</head>
+<body>
+
+<!-- LIŠTA MOCKUPU -->
+<div class="mockbar">
+  <span class="label"><b>Návrh C</b> — Kiosk / vysoký kontrast</span>
+  <button class="theme-toggle" id="themeToggle" aria-label="Přepnout světlý/tmavý režim">☀️</button>
+</div>
+
+<!-- SIMULOVANÝ DASHBOARD -->
+<main class="dash">
+  <div class="dash-head">
+    <h1>Kuchyně</h1>
+    <div class="sub" id="dashClock">Čtvrtek 24. 07. 2026 · 17:42</div>
+  </div>
+  <div class="tiles">
+    <button class="tile freezer" id="freezerTile">
+      <span class="ico">🧊</span>
+      <span>
+        <span class="t-name">Mrazák</span><br>
+        <span class="t-val" id="tileCount">9 položek</span>
+      </span>
+    </button>
+    <div class="tile dummy">
+      <span class="ico">💡</span>
+      <span><span class="t-name">Světla</span><br><span class="t-val">2 zapnutá</span></span>
+    </div>
+    <div class="tile dummy">
+      <span class="ico">🌡️</span>
+      <span><span class="t-name">Teplota</span><br><span class="t-val">22,4 °C</span></span>
+    </div>
+    <div class="tile dummy">
+      <span class="ico">🛒</span>
+      <span><span class="t-name">Nákup</span><br><span class="t-val">5 věcí</span></span>
+    </div>
+    <div class="tile dummy">
+      <span class="ico">🔌</span>
+      <span><span class="t-name">Spotřeba</span><br><span class="t-val">412 W</span></span>
+    </div>
+  </div>
+</main>
+
+<!-- POPUP -->
+<div class="overlay" id="overlay">
+  <div class="popup" role="dialog" aria-modal="true" aria-label="Mrazák">
+
+    <!-- 1. SEZNAM -->
+    <section class="screen active" id="scr-list">
+      <div class="scr-head">
+        <div class="titles">
+          <h2>Mrazák</h2>
+          <div class="subtitle" id="listSubtitle">9 položek · od nejstarší</div>
+        </div>
+        <button class="icon-btn" data-close aria-label="Zavřít">✕</button>
+      </div>
+      <div class="chips" id="filterChips"></div>
+      <div class="scr-body">
+        <ul class="item-list" id="itemList"></ul>
+      </div>
+      <div class="scr-foot">
+        <button class="btn btn-primary" id="btnAdd">+ PŘIDAT</button>
+      </div>
+    </section>
+
+    <!-- 2. VÝBĚR PRODUKTU -->
+    <section class="screen" id="scr-picker">
+      <div class="scr-head">
+        <button class="icon-btn" data-back="scr-list" aria-label="Zpět">←</button>
+        <div class="titles">
+          <h2>Co chcete přidat?</h2>
+          <div class="subtitle">Vyberte produkt</div>
+        </div>
+        <button class="icon-btn" data-close aria-label="Zavřít">✕</button>
+      </div>
+      <div class="scr-body" id="pickerBody"></div>
+    </section>
+
+    <!-- 3. FORMULÁŘ -->
+    <section class="screen" id="scr-form">
+      <div class="scr-head">
+        <button class="icon-btn" id="formBack" aria-label="Zpět">←</button>
+        <div class="titles">
+          <h2 id="formTitle">Přidat: Kuřecí prsa</h2>
+          <div class="subtitle" id="formSubtitle">Nová položka</div>
+        </div>
+        <button class="icon-btn" data-close aria-label="Zavřít">✕</button>
+      </div>
+      <div class="scr-body">
+        <div class="form-wrap">
+          <div class="f-group" id="customNameGroup" style="display:none">
+            <span class="f-label">Název</span>
+            <input class="f-input" id="fName" type="text" placeholder="Např. Zeleninová směs">
+          </div>
+          <div class="f-group">
+            <span class="f-label">Hmotnost balíčku</span>
+            <div class="w-chips" id="weightChips">
+              <button class="w-chip" data-w="250">250 g</button>
+              <button class="w-chip" data-w="500">500 g</button>
+              <button class="w-chip" data-w="750">750 g</button>
+              <button class="w-chip" data-w="1000">1000 g</button>
+            </div>
+            <input class="f-input mono-in" id="fWeight" type="number" inputmode="numeric" min="1" placeholder="Vlastní hmotnost v g (nepovinné)">
+          </div>
+          <div class="f-group" id="countGroup">
+            <span class="f-label">Počet balíčků</span>
+            <div class="stepper">
+              <button id="stMinus" aria-label="Ubrat">−</button>
+              <span class="val" id="stVal">1</span>
+              <button id="stPlus" aria-label="Přidat">+</button>
+            </div>
+          </div>
+          <div class="f-group">
+            <span class="f-label">Datum zamražení</span>
+            <div class="f-row2">
+              <select class="f-select" id="fMonth"></select>
+              <select class="f-select" id="fYear"></select>
+            </div>
+          </div>
+          <div class="f-group">
+            <span class="f-label">Poznámka</span>
+            <input class="f-input" id="fNote" type="text" placeholder="Nepovinné…">
+          </div>
+        </div>
+      </div>
+      <div class="scr-foot">
+        <button class="btn btn-primary" id="formSubmit">PŘIDAT DO MRAZÁKU</button>
+        <button class="btn btn-quiet" id="formCancel">ZRUŠIT</button>
+      </div>
+    </section>
+
+    <!-- 4. DIALOG VYJMUTÍ -->
+    <section class="screen" id="scr-remove">
+      <div class="scr-head">
+        <button class="icon-btn" data-back="scr-list" aria-label="Zpět">←</button>
+        <div class="titles">
+          <h2>Vyjmout položku?</h2>
+          <div class="subtitle">Vyberte akci</div>
+        </div>
+        <button class="icon-btn" data-close aria-label="Zavřít">✕</button>
+      </div>
+      <div class="scr-body">
+        <div class="rm-summary">
+          <div class="rm-emoji" id="rmEmoji">🍗</div>
+          <div class="rm-name" id="rmName">Kuřecí prsa</div>
+          <div class="rm-meta mono" id="rmMeta">06/2026 · 500 g</div>
+          <div class="rm-note" id="rmNote"></div>
+        </div>
+        <div class="rm-actions">
+          <button class="btn btn-primary" id="rmAll">VYJMOUT CELÉ</button>
+          <button class="btn btn-ghost" id="rmHalf">VYJMOUT POLOVINU <span class="sub-label" id="rmHalfG">– 250 g</span></button>
+          <button class="btn btn-ghost" id="rmCustom">ZADAT MNOŽSTVÍ</button>
+          <button class="btn btn-ghost" id="rmEdit">UPRAVIT</button>
+          <button class="btn btn-quiet" data-back="scr-list">ZRUŠIT</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4b. ZADAT MNOŽSTVÍ -->
+    <section class="screen" id="scr-amount">
+      <div class="scr-head">
+        <button class="icon-btn" data-back="scr-remove" aria-label="Zpět">←</button>
+        <div class="titles">
+          <h2>Zadat množství</h2>
+          <div class="subtitle" id="amtSubtitle">Kuřecí prsa</div>
+        </div>
+        <button class="icon-btn" data-close aria-label="Zavřít">✕</button>
+      </div>
+      <div class="scr-body">
+        <div class="amt-wrap">
+          <div class="amt-info">Aktuálně v mrazáku: <b id="amtCurrent">500 g</b></div>
+          <div class="amt-input-row">
+            <input class="amt-input" id="amtInput" type="number" inputmode="numeric" min="1" placeholder="0">
+            <span class="amt-unit">g</span>
+          </div>
+          <div class="amt-preview" id="amtPreview">Po vyjmutí zůstane: <b>—</b></div>
+        </div>
+      </div>
+      <div class="scr-foot">
+        <button class="btn btn-primary" id="amtConfirm">POTVRDIT</button>
+        <button class="btn btn-quiet" data-back="scr-remove">ZRUŠIT</button>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- SNACKBAR -->
+<div class="snackbar" id="snackbar">
+  <span id="snackText">Položka byla vyjmuta</span>
+  <button id="snackUndo">VRÁTIT ZPĚT</button>
+</div>
+
+<script>
+/* ================== DATA (jen demo, v paměti) ================== */
+const NOW = { m: 7, y: 2026 };            // „dnes" = červenec 2026
+const CATS = ['Vše','Kuřecí','Vepřové','Hovězí','Ryby','Ostatní'];
+const CAT_EMOJI = { 'Kuřecí':'🍗', 'Vepřové':'🐷', 'Hovězí':'🐮', 'Ryby':'🐟', 'Ostatní':'🦃' };
+const MONTHS = ['Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
+
+let nextId = 100;
+let items = [
+  { id:1, name:'Losos filet',       cat:'Ryby',    m:9,  y:2025, g:400,  note:'z Makra' },
+  { id:2, name:'Vepřová krkovice',  cat:'Vepřové', m:11, y:2025, g:800,  note:'' },
+  { id:3, name:'Hovězí guláš',      cat:'Hovězí',  m:1,  y:2026, g:600,  note:'nakrájené kostky' },
+  { id:4, name:'Kuřecí stehna',     cat:'Kuřecí',  m:2,  y:2026, g:1000, note:'' },
+  { id:5, name:'Krůtí prsa',        cat:'Ostatní', m:3,  y:2026, g:null, note:'' },
+  { id:6, name:'Hovězí mleté',      cat:'Hovězí',  m:4,  y:2026, g:500,  note:'' },
+  { id:7, name:'Vepřová panenka',   cat:'Vepřové', m:5,  y:2026, g:450,  note:'' },
+  { id:8, name:'Kuřecí prsa',       cat:'Kuřecí',  m:6,  y:2026, g:500,  note:'' },
+  { id:9, name:'Treska filety',     cat:'Ryby',    m:6,  y:2026, g:300,  note:'2 balení' },
+];
+
+const PRODUCTS = [
+  { cat:'Kuřecí',  emoji:'🍗', items:['Kuřecí prsa','Kuřecí stehna','Kuřecí křídla','Celé kuře'] },
+  { cat:'Vepřové', emoji:'🐷', items:['Vepřová kýta','Vepřová krkovice','Vepřová panenka','Vepřové mleté'] },
+  { cat:'Hovězí',  emoji:'🐮', items:['Hovězí mleté','Hovězí guláš','Hovězí svíčková'] },
+  { cat:'Ryby',    emoji:'🐟', items:['Losos filet','Treska filety','Pstruh'] },
+  { cat:'Ostatní', emoji:'🦃', items:['Krůtí prsa','Kachní prsa'] },
+];
+
+/* ================== POMOCNÉ ================== */
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2,'0');
+const fmtDate = it => pad(it.m) + '/' + it.y;
+const fmtW = it => it.g == null ? 'hmotnost neuvedena' : it.g + ' g';
+const ageMonths = it => (NOW.y - it.y) * 12 + (NOW.m - it.m);
+function ageClass(a) { return a >= 9 ? 'red' : a >= 6 ? 'orange' : 'green'; }
+function ageText(a) { return a <= 0 ? 'nové' : a + ' měs.'; }
+const emojiFor = cat => CAT_EMOJI[cat] || '🧊';
+
+let filter = 'Vše';
+let currentItem = null;             // položka v dialogu vyjmutí
+let formCtx = null;                 // { mode:'add'|'edit', name, cat, other, editId }
+let undoSnapshot = null;
+let snackTimer = null;
+
+/* ================== TÉMA ================== */
+$('themeToggle').addEventListener('click', () => {
+  const h = document.documentElement;
+  const dark = h.getAttribute('data-theme') === 'dark';
+  h.setAttribute('data-theme', dark ? 'light' : 'dark');
+  $('themeToggle').textContent = dark ? '🌙' : '☀️';
+});
+
+/* ================== POPUP OTEVŘENÍ/ZAVŘENÍ ================== */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+  const body = document.querySelector('#' + id + ' .scr-body');
+  if (body) body.scrollTop = 0;
+}
+$('freezerTile').addEventListener('click', () => {
+  renderList();
+  showScreen('scr-list');
+  $('overlay').classList.add('open');
+});
+document.querySelectorAll('[data-close]').forEach(b =>
+  b.addEventListener('click', () => $('overlay').classList.remove('open')));
+document.querySelectorAll('[data-back]').forEach(b =>
+  b.addEventListener('click', () => showScreen(b.getAttribute('data-back'))));
+$('overlay').addEventListener('click', e => {
+  if (e.target === $('overlay')) $('overlay').classList.remove('open');
+});
+
+/* ================== 1. SEZNAM ================== */
+function renderChips() {
+  $('filterChips').innerHTML = '';
+  CATS.forEach(c => {
+    const b = document.createElement('button');
+    b.className = 'chip' + (filter === c ? ' on' : '');
+    b.textContent = c;
+    b.addEventListener('click', () => { filter = c; renderList(); });
+    $('filterChips').appendChild(b);
+  });
+}
+function renderList() {
+  renderChips();
+  const list = $('itemList');
+  list.innerHTML = '';
+  const data = items
+    .filter(it => filter === 'Vše' || it.cat === filter)
+    .sort((a,b) => (a.y*12+a.m) - (b.y*12+b.m));
+  if (!data.length) {
+    list.innerHTML = '<li class="empty-msg">Žádné položky v této kategorii.</li>';
+  }
+  data.forEach(it => {
+    const a = ageMonths(it), ac = ageClass(a);
+    const li = document.createElement('li');
+    const row = document.createElement('button');
+    row.className = 'item-row' + (ac !== 'green' ? ' age-' + ac : '');
+    row.innerHTML =
+      '<span class="item-emoji">' + emojiFor(it.cat) + '</span>' +
+      '<span class="item-main">' +
+        '<span class="item-name">' + it.name + '</span>' +
+        '<span class="item-meta" style="display:block">' + fmtDate(it) + ' · <span class="w">' + fmtW(it) + '</span></span>' +
+        (it.note ? '<span class="item-note" style="display:block">' + it.note + '</span>' : '') +
+      '</span>' +
+      '<span class="item-age">' +
+        '<span class="age-dot c-' + ac + '"></span>' +
+        '<span class="age-txt t-' + ac + '">' + ageText(a) + '</span>' +
+      '</span>';
+    row.addEventListener('click', () => openRemove(it.id));
+    li.appendChild(row);
+    list.appendChild(li);
+  });
+  const n = items.length;
+  const word = n === 1 ? 'položka' : (n >= 2 && n <= 4 ? 'položky' : 'položek');
+  $('listSubtitle').textContent = n + ' ' + word + ' · od nejstarší';
+  $('tileCount').textContent = n + ' ' + word;
+}
+
+/* ================== 2. VÝBĚR PRODUKTU ================== */
+function renderPicker() {
+  const body = $('pickerBody');
+  body.innerHTML = '';
+  PRODUCTS.forEach(gr => {
+    const block = document.createElement('div');
+    block.className = 'cat-block';
+    block.innerHTML = '<div class="cat-label">' + gr.emoji + ' ' + gr.cat + '</div>';
+    const grid = document.createElement('div');
+    grid.className = 'prod-grid';
+    gr.items.forEach(name => {
+      const t = document.createElement('button');
+      t.className = 'prod-tile';
+      t.textContent = name;
+      t.addEventListener('click', () => openForm({ mode:'add', name, cat: gr.cat, other:false }));
+      grid.appendChild(t);
+    });
+    block.appendChild(grid);
+    body.appendChild(block);
+  });
+  const block = document.createElement('div');
+  block.className = 'cat-block';
+  block.style.paddingBottom = '16px';
+  const grid = document.createElement('div');
+  grid.className = 'prod-grid';
+  const t = document.createElement('button');
+  t.className = 'prod-tile other';
+  t.textContent = '✏️ Jiné…';
+  t.addEventListener('click', () => openForm({ mode:'add', name:'', cat:'Ostatní', other:true }));
+  grid.appendChild(t);
+  block.appendChild(grid);
+  body.appendChild(block);
+}
+$('btnAdd').addEventListener('click', () => { renderPicker(); showScreen('scr-picker'); });
+
+/* ================== 3. FORMULÁŘ ================== */
+(function initSelects(){
+  MONTHS.forEach((m,i) => $('fMonth').add(new Option(m, i+1)));
+  [2024,2025,2026].forEach(y => $('fYear').add(new Option(y, y)));
+})();
+
+let stCount = 1;
+function setCount(n) { stCount = Math.max(1, Math.min(20, n)); $('stVal').textContent = stCount; }
+$('stMinus').addEventListener('click', () => setCount(stCount - 1));
+$('stPlus').addEventListener('click', () => setCount(stCount + 1));
+
+function selectWeightChip(g) {
+  document.querySelectorAll('.w-chip').forEach(c =>
+    c.classList.toggle('on', Number(c.dataset.w) === g));
+}
+document.querySelectorAll('.w-chip').forEach(c =>
+  c.addEventListener('click', () => {
+    const g = Number(c.dataset.w);
+    const wasOn = c.classList.contains('on');
+    selectWeightChip(wasOn ? null : g);
+    $('fWeight').value = '';
+  }));
+$('fWeight').addEventListener('input', () => selectWeightChip(null));
+
+function chosenWeight() {
+  const custom = parseInt($('fWeight').value, 10);
+  if (custom > 0) return custom;
+  const on = document.querySelector('.w-chip.on');
+  return on ? Number(on.dataset.w) : null;
+}
+
+function openForm(ctx) {
+  formCtx = ctx;
+  const edit = ctx.mode === 'edit';
+  $('formTitle').textContent = edit ? 'Upravit: ' + ctx.name : (ctx.other ? 'Přidat: Jiné' : 'Přidat: ' + ctx.name);
+  $('formSubtitle').textContent = edit ? 'Úprava položky' : 'Nová položka';
+  $('formSubmit').textContent = edit ? 'ULOŽIT ZMĚNY' : 'PŘIDAT DO MRAZÁKU';
+  $('customNameGroup').style.display = ctx.other || edit ? '' : 'none';
+  $('countGroup').style.display = edit ? 'none' : '';
+  $('formBack').setAttribute('data-target', edit ? 'scr-remove' : 'scr-picker');
+
+  if (edit) {
+    const it = items.find(i => i.id === ctx.editId);
+    $('fName').value = it.name;
+    if (it.g != null && [250,500,750,1000].includes(it.g)) { selectWeightChip(it.g); $('fWeight').value = ''; }
+    else { selectWeightChip(null); $('fWeight').value = it.g != null ? it.g : ''; }
+    $('fMonth').value = it.m; $('fYear').value = it.y;
+    $('fNote').value = it.note || '';
+  } else {
+    $('fName').value = '';
+    selectWeightChip(null); $('fWeight').value = '';
+    $('fMonth').value = NOW.m; $('fYear').value = NOW.y;  // Červenec 2026
+    $('fNote').value = '';
+    setCount(1);
+  }
+  showScreen('scr-form');
+}
+$('formBack').addEventListener('click', () =>
+  showScreen($('formBack').getAttribute('data-target') || 'scr-picker'));
+$('formCancel').addEventListener('click', () => showScreen('scr-list'));
+
+$('formSubmit').addEventListener('click', () => {
+  const g = chosenWeight();
+  const m = Number($('fMonth').value), y = Number($('fYear').value);
+  const note = $('fNote').value.trim();
+  if (formCtx.mode === 'edit') {
+    const it = items.find(i => i.id === formCtx.editId);
+    it.name = $('fName').value.trim() || it.name;
+    it.g = g; it.m = m; it.y = y; it.note = note;
+    renderList(); showScreen('scr-list');
+    showSnack('Položka byla upravena', false);
+  } else {
+    const name = formCtx.other ? ($('fName').value.trim() || 'Jiné') : formCtx.name;
+    for (let i = 0; i < stCount; i++)
+      items.push({ id: nextId++, name, cat: formCtx.cat, m, y, g, note });
+    renderList(); showScreen('scr-list');
+    showSnack(stCount === 1 ? 'Položka byla přidána' : 'Přidáno ' + stCount + ' balíčků', false);
+  }
+});
+
+/* ================== 4. DIALOG VYJMUTÍ ================== */
+function openRemove(id) {
+  currentItem = items.find(i => i.id === id);
+  const it = currentItem;
+  $('rmEmoji').textContent = emojiFor(it.cat);
+  $('rmName').textContent = 'Vyjmout ' + it.name;
+  $('rmMeta').textContent = fmtDate(it) + ' · ' + fmtW(it) + ' ?';
+  $('rmNote').textContent = it.note || '';
+  const hasW = it.g != null;
+  $('rmHalf').style.display = hasW ? '' : 'none';
+  $('rmCustom').style.display = hasW ? '' : 'none';
+  if (hasW) $('rmHalfG').textContent = '– ' + Math.round(it.g / 2) + ' g';
+  showScreen('scr-remove');
+}
+
+function snapshot() { undoSnapshot = JSON.parse(JSON.stringify(items)); }
+
+$('rmAll').addEventListener('click', () => {
+  snapshot();
+  items = items.filter(i => i.id !== currentItem.id);
+  renderList(); showScreen('scr-list');
+  showSnack('Položka byla vyjmuta', true);
+});
+$('rmHalf').addEventListener('click', () => {
+  snapshot();
+  currentItem.g = Math.round(currentItem.g / 2);
+  renderList(); showScreen('scr-list');
+  showSnack('Vyjmuta polovina — v mrazáku zbývá ' + currentItem.g + ' g', true);
+});
+$('rmEdit').addEventListener('click', () =>
+  openForm({ mode:'edit', name: currentItem.name, cat: currentItem.cat, other:false, editId: currentItem.id }));
+
+/* ================== 4b. ZADAT MNOŽSTVÍ ================== */
+$('rmCustom').addEventListener('click', () => {
+  $('amtSubtitle').textContent = currentItem.name + ' · ' + fmtDate(currentItem);
+  $('amtCurrent').textContent = currentItem.g + ' g';
+  $('amtInput').value = '';
+  updateAmtPreview();
+  showScreen('scr-amount');
+  setTimeout(() => $('amtInput').focus(), 60);
+});
+function updateAmtPreview() {
+  const v = parseInt($('amtInput').value, 10);
+  const p = $('amtPreview');
+  if (!(v > 0)) { p.classList.remove('neg'); p.innerHTML = 'Po vyjmutí zůstane: <b>—</b>'; return; }
+  const rest = currentItem.g - v;
+  if (rest < 0) { p.classList.add('neg'); p.innerHTML = 'Zadané množství je víc, než je v mrazáku <b>(' + currentItem.g + ' g)</b>'; }
+  else if (rest === 0) { p.classList.remove('neg'); p.innerHTML = 'Po vyjmutí zůstane: <b>0 g</b> — položka bude odstraněna'; }
+  else { p.classList.remove('neg'); p.innerHTML = 'Po vyjmutí zůstane: <b>' + rest + ' g</b>'; }
+}
+$('amtInput').addEventListener('input', updateAmtPreview);
+$('amtConfirm').addEventListener('click', () => {
+  const v = parseInt($('amtInput').value, 10);
+  if (!(v > 0) || v > currentItem.g) return;
+  snapshot();
+  const rest = currentItem.g - v;
+  if (rest === 0) {
+    items = items.filter(i => i.id !== currentItem.id);
+    showSnack('Položka byla vyjmuta', true);
+  } else {
+    currentItem.g = rest;
+    showSnack('Vyjmuto ' + v + ' g — zbývá ' + rest + ' g', true);
+  }
+  renderList(); showScreen('scr-list');
+});
+
+/* ================== 5. SNACKBAR + UNDO ================== */
+function showSnack(text, undoable) {
+  clearTimeout(snackTimer);
+  $('snackText').textContent = text;
+  $('snackUndo').style.display = undoable ? '' : 'none';
+  $('snackbar').classList.add('show');
+  snackTimer = setTimeout(() => $('snackbar').classList.remove('show'), 6000);
+}
+$('snackUndo').addEventListener('click', () => {
+  if (undoSnapshot) { items = undoSnapshot; undoSnapshot = null; renderList(); }
+  clearTimeout(snackTimer);
+  $('snackbar').classList.remove('show');
+});
+
+/* init */
+renderList();
+</script>
+</body>
+</html>

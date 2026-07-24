@@ -1,0 +1,303 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Freezer Inventory",
+        "description": "Set up your freezer inventory. Everything can be changed later.",
+        "data": {
+          "language": "Interface language",
+          "freezer_name": "Freezer name",
+          "create_defaults": "Create default products",
+          "default_unit": "Default weight unit"
+        }
+      }
+    },
+    "error": {
+      "invalid_name": "The name must not be empty."
+    },
+    "abort": {
+      "single_instance_allowed": "Freezer Inventory is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Freezer Inventory options",
+        "data": {
+          "language": "Interface language",
+          "freezer_name": "Freezer name",
+          "old_months": "Highlight items older than (months)"
+        }
+      }
+    },
+    "error": {
+      "invalid_name": "The name must not be empty."
+    }
+  },
+  "selector": {
+    "language": {
+      "options": {
+        "cs": "Čeština",
+        "en": "English"
+      }
+    },
+    "default_unit": {
+      "options": {
+        "g": "Grams (g)",
+        "kg": "Kilograms (kg)"
+      }
+    }
+  },
+  "services": {
+    "add_item": {
+      "name": "Add item",
+      "description": "Adds one or more packages to a freezer.",
+      "fields": {
+        "freezer_id": {
+          "name": "Freezer",
+          "description": "ID of the freezer, e.g. main_freezer."
+        },
+        "product_id": {
+          "name": "Product ID",
+          "description": "ID of a preset product. Either this or a product name is required."
+        },
+        "product_name": {
+          "name": "Product name",
+          "description": "Free-text product name. Either this or a product ID is required."
+        },
+        "month": {
+          "name": "Month",
+          "description": "Month the item was frozen (1–12)."
+        },
+        "year": {
+          "name": "Year",
+          "description": "Year the item was frozen."
+        },
+        "weight": {
+          "name": "Weight",
+          "description": "Weight in grams (optional)."
+        },
+        "note": {
+          "name": "Note",
+          "description": "Optional note."
+        },
+        "quantity": {
+          "name": "Quantity",
+          "description": "Number of identical packages to add (default 1)."
+        },
+        "pieces": {
+          "name": "Pieces",
+          "description": "Number of pieces in the package (optional)."
+        }
+      }
+    },
+    "remove_item": {
+      "name": "Remove item",
+      "description": "Removes a whole item from a freezer.",
+      "fields": {
+        "freezer_id": {
+          "name": "Freezer",
+          "description": "ID of the freezer."
+        },
+        "item_id": {
+          "name": "Item ID",
+          "description": "Unique ID of the item."
+        }
+      }
+    },
+    "remove_half": {
+      "name": "Remove half",
+      "description": "Halves the current weight of an item.",
+      "fields": {
+        "freezer_id": {
+          "name": "Freezer",
+          "description": "ID of the freezer."
+        },
+        "item_id": {
+          "name": "Item ID",
+          "description": "Unique ID of the item."
+        }
+      }
+    },
+    "remove_amount": {
+      "name": "Remove amount",
+      "description": "Removes a specific weight from an item. Removing the full weight deletes the item.",
+      "fields": {
+        "freezer_id": {
+          "name": "Freezer",
+          "description": "ID of the freezer."
+        },
+        "item_id": {
+          "name": "Item ID",
+          "description": "Unique ID of the item."
+        },
+        "amount": {
+          "name": "Amount",
+          "description": "Weight to remove in grams."
+        },
+        "pieces": {
+          "name": "Pieces",
+          "description": "Number of pieces to remove."
+        }
+      }
+    },
+    "update_item": {
+      "name": "Update item",
+      "description": "Updates only the provided fields of an item.",
+      "fields": {
+        "freezer_id": {
+          "name": "Freezer",
+          "description": "ID of the freezer."
+        },
+        "item_id": {
+          "name": "Item ID",
+          "description": "Unique ID of the item."
+        },
+        "product_id": {
+          "name": "Product ID",
+          "description": "New preset product ID."
+        },
+        "product_name": {
+          "name": "Product name",
+          "description": "New product name."
+        },
+        "month": {
+          "name": "Month",
+          "description": "New month (1–12)."
+        },
+        "year": {
+          "name": "Year",
+          "description": "New year."
+        },
+        "weight": {
+          "name": "Weight",
+          "description": "New current weight in grams."
+        },
+        "original_weight": {
+          "name": "Original weight",
+          "description": "New original weight in grams."
+        },
+        "note": {
+          "name": "Note",
+          "description": "New note."
+        },
+        "pieces": {
+          "name": "Pieces",
+          "description": "New number of pieces."
+        },
+        "original_pieces": {
+          "name": "Original pieces",
+          "description": "New original number of pieces."
+        }
+      }
+    },
+    "move_item": {
+      "name": "Move item",
+      "description": "Moves an item between freezers.",
+      "fields": {
+        "item_id": {
+          "name": "Item ID",
+          "description": "Unique ID of the item."
+        },
+        "source_freezer_id": {
+          "name": "Source freezer",
+          "description": "ID of the source freezer."
+        },
+        "target_freezer_id": {
+          "name": "Target freezer",
+          "description": "ID of the target freezer."
+        }
+      }
+    },
+    "add_product": {
+      "name": "Add product preset",
+      "description": "Adds a product to the preset catalog.",
+      "fields": {
+        "name": {
+          "name": "Name",
+          "description": "Product name."
+        },
+        "category_id": {
+          "name": "Category",
+          "description": "ID of an existing category."
+        },
+        "icon": {
+          "name": "Icon",
+          "description": "MDI icon, e.g. mdi:food-drumstick."
+        },
+        "default_weight": {
+          "name": "Default weight",
+          "description": "Default weight in grams."
+        },
+        "quick_weights": {
+          "name": "Quick weights",
+          "description": "List of quick weight choices in grams."
+        },
+        "ask_for_weight": {
+          "name": "Ask for weight",
+          "description": "Whether the weight field is shown when adding this product."
+        },
+        "quick_pieces": {
+          "name": "Quick pieces",
+          "description": "List of quick piece-count choices."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "freezer_not_found": {
+      "message": "Freezer \"{freezer_id}\" does not exist."
+    },
+    "item_not_found": {
+      "message": "The item no longer exists."
+    },
+    "item_exists": {
+      "message": "The item already exists."
+    },
+    "no_weight": {
+      "message": "The item has no weight set."
+    },
+    "not_enough_weight": {
+      "message": "Cannot remove {amount} g. Only {weight} g left."
+    },
+    "invalid_month": {
+      "message": "The month is not valid."
+    },
+    "invalid_year": {
+      "message": "The year is not valid."
+    },
+    "invalid_weight": {
+      "message": "The weight must be a positive number."
+    },
+    "invalid_amount": {
+      "message": "The amount must be a positive number."
+    },
+    "invalid_name": {
+      "message": "The name must not be empty."
+    },
+    "invalid_quantity": {
+      "message": "The quantity is not valid."
+    },
+    "product_not_found": {
+      "message": "Product \"{product_id}\" does not exist."
+    },
+    "category_not_found": {
+      "message": "Category \"{category_id}\" does not exist."
+    },
+    "duplicate_id": {
+      "message": "This ID is already in use."
+    },
+    "missing_product": {
+      "message": "Either a product or a product name is required."
+    },
+    "no_pieces": {
+      "message": "The item has no piece count set."
+    },
+    "not_enough_pieces": {
+      "message": "Cannot remove {pieces} pcs. Only {count} pcs left."
+    },
+    "invalid_pieces": {
+      "message": "The number of pieces is not valid."
+    }
+  }
+}

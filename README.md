@@ -1,0 +1,156 @@
+<div align="center">
+
+<img src="assets/icon.svg" alt="Freezer Inventory" width="140"/>
+
+# Freezer Inventory
+
+**Track every package in your freezer from a fridge-mounted tablet.**
+
+[![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
+[![GitHub Release](https://img.shields.io/github/v/release/nikopol666/homeassistant-freezer-inventory?style=for-the-badge)](https://github.com/nikopol666/homeassistant-freezer-inventory/releases)
+[![License](https://img.shields.io/github/license/nikopol666/homeassistant-freezer-inventory?style=for-the-badge)](LICENSE)
+
+[![Open your Home Assistant instance and open this repository inside HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nikopol666&repository=homeassistant-freezer-inventory&category=integration)
+[![Open your Home Assistant instance and start setting up the integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=freezer_inventory)
+
+🇨🇿 **[Česká dokumentace / Czech documentation](README.cs.md)**
+
+</div>
+
+---
+
+A custom Home Assistant integration + Lovelace card for tracking individual packages of frozen food. Designed for touch control on a fridge-mounted tablet (works great in Fully Kiosk Browser).
+
+## Features
+
+- 📦 **Every package is a separate item** — product, freeze month/year, optional weight **and/or piece count**, note
+- 👆 **Touch-first UI** — large tiles, 56–72 px rows, tablet mode, built-in popups (no Browser Mod / Bubble Card)
+- ➕ **Fast adding** — category-grouped product tiles with emoji icons, weight quick-picks, multiple packages at once
+- ➖ **Smart removal** — remove all / half / a specific weight or number of pieces, with confirmation and **undo**
+- 🗂️ **Preset management in the UI** — categories (colors, icons, storage times) and products (default & quick weights, ordering, hiding)
+- ⏰ **Old-item highlighting** — per-category recommended storage times with a global fallback
+- 🚪 **Auto-close** — optionally close the popup after a period of inactivity (ideal for kiosk tablets)
+- 💾 **Persistent storage** — data lives in `.storage/`, survives restarts, included in HA backups
+- 🌍 **Czech & English** — language selected in the integration, independent of the HA language
+- 🏪 **One-repo HACS install** — the card resource registers automatically
+
+## Installation
+
+### HACS (recommended)
+
+1. Click the **HACS badge above**, or: HACS → ⋮ → *Custom repositories* → add
+   `https://github.com/nikopol666/homeassistant-freezer-inventory` (type **Integration**)
+2. Install **Freezer Inventory** and restart Home Assistant
+3. Click the **Add Integration badge above**, or: *Settings → Devices & services → Add integration → Freezer Inventory*
+
+### Manual
+
+Copy `custom_components/freezer_inventory` into `config/custom_components/` and restart HA.
+
+## First setup
+
+| Option | Default |
+|---|---|
+| Interface language | Czech |
+| Freezer name | Mrazák / Freezer |
+| Create default products | yes |
+| Default unit | g |
+
+The integration creates a `sensor.<freezer>` (state = package count, summary attributes) and seeds ~30 preset products in 6 categories in the chosen language.
+
+## Card
+
+Add via the visual editor (*Freezer Inventory Card*) or YAML:
+
+```yaml
+type: custom:freezer-inventory-card
+freezer_id: main_freezer
+display_mode: popup
+touch_mode: true
+```
+
+All options:
+
+```yaml
+type: custom:freezer-inventory-card
+freezer_id: main_freezer
+name: Freezer          # overrides the title
+icon: mdi:snowflake    # or an emoji, e.g. 🧊
+display_mode: popup    # popup | list
+touch_mode: true       # larger touch targets
+show_count: true
+show_weight: true
+show_note: true
+sort: oldest_first     # oldest_first | newest_first
+old_months: 6          # highlight threshold override
+language: en           # cs | en (defaults to the integration language)
+auto_close: 60         # close the popup after N seconds of inactivity
+```
+
+## Weight and pieces
+
+Each item can track a **weight**, a **piece count**, both, or neither:
+
+- *Remove half* halves whatever is tracked (mathematical rounding, original values preserved)
+- *Enter amount* lets you remove grams and/or pieces; removing everything deletes the item
+- The add form also has a *number of packages* field that creates N separate items at once
+
+## Services
+
+`freezer_inventory.add_item` (returns `item_ids`, supports `quantity` & `pieces`), `remove_item`, `remove_half`, `remove_amount` (`amount` g and/or `pieces`), `update_item`, `move_item`, `add_product`. Events: `freezer_inventory_item_added` / `_removed` / `_updated`.
+
+```yaml
+action: freezer_inventory.add_item
+data:
+  freezer_id: main_freezer
+  product_id: chicken_breast
+  month: 7
+  year: 2026
+  weight: 1200
+  pieces: 6
+  quantity: 2
+```
+
+### Automation example — old items notification
+
+```yaml
+automation:
+  - alias: "Freezer: old items"
+    triggers:
+      - trigger: time
+        at: "09:00:00"
+    conditions:
+      - condition: template
+        value_template: >
+          {% set oldest = state_attr('sensor.freezer', 'oldest_item') %}
+          {{ oldest is not none and
+             (now().year - oldest.year) * 12 + now().month - oldest.month >= 6 }}
+    actions:
+      - action: notify.mobile_app_phone
+        data:
+          title: "🧊 Freezer"
+          message: >
+            {% set oldest = state_attr('sensor.freezer', 'oldest_item') %}
+            Oldest item: {{ oldest.name }}
+            ({{ '%02d' % oldest.month }}/{{ oldest.year }})
+```
+
+## Development
+
+```bash
+# backend tests
+pip install -r requirements_test.txt
+pytest tests/ -v
+
+# card build (output: custom_components/freezer_inventory/frontend/)
+npm install
+npm run build
+```
+
+## Contributing
+
+This is a community project — bug reports, feature ideas, translations and pull requests are all welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md). For questions and ideas, use [GitHub Discussions](https://github.com/nikopol666/homeassistant-freezer-inventory/discussions).
+
+## License
+
+[MIT](LICENSE)

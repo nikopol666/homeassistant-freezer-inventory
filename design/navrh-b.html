@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Návrh B — Barevné kategorie · Mrazák</title>
+<style>
+/* ============ ZÁKLAD + PROMĚNNÉ ============ */
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+:root{
+  --bg:#eef0f4;
+  --card:#ffffff;
+  --card-2:#f5f6f9;
+  --text:#1b2333;
+  --muted:#5d6675;
+  --border:rgba(22,32,54,.10);
+  --shadow:0 8px 28px rgba(20,30,55,.14);
+  --shadow-sm:0 2px 8px rgba(20,30,55,.08);
+  --primary:#1f6fd6;
+  --primary-press:#1a5fba;
+  --on-primary:#ffffff;
+  --on-cat:#ffffff;
+  --warn:#e07b00;
+  --warn-soft:#fdeeda;
+  --danger:#d64040;
+  --danger-soft:#fbe3e3;
+  --overlay:rgba(18,24,38,.45);
+  --radius:16px;
+
+  /* kategorie — světlý režim (syté) */
+  --cat-kur:#e8930c;  --cat-kur-soft:#fcefd8;
+  --cat-vep:#d9578b;  --cat-vep-soft:#fae2ec;
+  --cat-hov:#a8503a;  --cat-hov-soft:#f5e2dc;
+  --cat-kru:#7a4fc0;  --cat-kru-soft:#ece3f8;
+  --cat-ryb:#2f7fc4;  --cat-ryb-soft:#dcecf9;
+  --cat-ost:#5f8f72;  --cat-ost-soft:#e0efe6;
+}
+
+html[data-theme="dark"]{
+  --bg:#111318;
+  --card:#1c1e24;
+  --card-2:#23262e;
+  --text:#e9ebf1;
+  --muted:#9aa3b2;
+  --border:rgba(255,255,255,.09);
+  --shadow:0 10px 32px rgba(0,0,0,.5);
+  --shadow-sm:0 2px 8px rgba(0,0,0,.35);
+  --primary:#5b9be6;
+  --primary-press:#6faaee;
+  --on-primary:#10131a;
+  --on-cat:#14161c;
+  --warn:#e79a3c;
+  --warn-soft:#33270f;
+  --danger:#e2726f;
+  --danger-soft:#37201f;
+  --overlay:rgba(0,0,0,.62);
+
+  /* kategorie — tmavý režim (ztlumené / desaturované) */
+  --cat-kur:#d8a24f;  --cat-kur-soft:#2c2414;
+  --cat-vep:#c47e9d;  --cat-vep-soft:#2b1c24;
+  --cat-hov:#bd7a63;  --cat-hov-soft:#2a1d18;
+  --cat-kru:#a189cf;  --cat-kru-soft:#241d31;
+  --cat-ryb:#6ea6d8;  --cat-ryb-soft:#172433;
+  --cat-ost:#84ab92;  --cat-ost-soft:#1b2a20;
+}
+
+/* mapování kategorie -> lokální proměnné */
+.cat-kur{ --c:var(--cat-kur); --c-soft:var(--cat-kur-soft); }
+.cat-vep{ --c:var(--cat-vep); --c-soft:var(--cat-vep-soft); }
+.cat-hov{ --c:var(--cat-hov); --c-soft:var(--cat-hov-soft); }
+.cat-kru{ --c:var(--cat-kru); --c-soft:var(--cat-kru-soft); }
+.cat-ryb{ --c:var(--cat-ryb); --c-soft:var(--cat-ryb-soft); }
+.cat-ost{ --c:var(--cat-ost); --c-soft:var(--cat-ost-soft); }
+
+body{
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif;
+  background:var(--bg); color:var(--text);
+  font-size:16px; line-height:1.4;
+  min-height:100vh;
+}
+button{ font:inherit; color:inherit; border:0; background:none; cursor:pointer; }
+input,select{ font:inherit; color:inherit; }
+
+/* ============ LIŠTA MOCKUPU ============ */
+.mockbar{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:10px 16px;
+  background:var(--card); border-bottom:1px solid var(--border);
+  position:sticky; top:0; z-index:50;
+}
+.mockbar .label{ font-weight:800; font-size:15px; letter-spacing:.2px; }
+.mockbar .label small{ font-weight:600; color:var(--muted); margin-left:8px; }
+.theme-btn{
+  min-width:48px; min-height:44px; padding:6px 14px;
+  border-radius:999px; background:var(--card-2); border:1px solid var(--border);
+  font-size:20px; line-height:1;
+}
+.theme-btn:active{ transform:scale(.96); }
+
+/* ============ SIMULOVANÝ DASHBOARD ============ */
+.dashboard{ max-width:1024px; margin:0 auto; padding:24px 20px 48px; }
+.dash-head{ margin:8px 4px 18px; }
+.dash-head h1{ font-size:26px; font-weight:800; letter-spacing:-.3px; }
+.dash-head p{ color:var(--muted); font-weight:600; font-size:14px; margin-top:2px; }
+.tiles{ display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:16px; }
+.tile{
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:18px 16px; min-height:110px; box-shadow:var(--shadow-sm);
+  display:flex; flex-direction:column; justify-content:space-between; gap:10px;
+  text-align:left;
+}
+.tile .t-emoji{ font-size:28px; }
+.tile .t-name{ font-weight:800; font-size:16px; }
+.tile .t-sub{ color:var(--muted); font-weight:600; font-size:13px; margin-top:2px; }
+.tile.dim{ opacity:.55; cursor:default; }
+.tile-freezer{
+  cursor:pointer;
+  border:2px solid var(--cat-ryb);
+  background:linear-gradient(145deg, var(--cat-ryb-soft), var(--card));
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.tile-freezer:hover{ transform:translateY(-2px); box-shadow:var(--shadow); }
+.tile-freezer:active{ transform:scale(.98); }
+.tile-freezer .t-sub{ color:var(--cat-ryb); }
+
+/* ============ POPUP / OVERLAY ============ */
+.overlay{
+  position:fixed; inset:0; z-index:100;
+  background:var(--overlay);
+  display:none; align-items:center; justify-content:center;
+  padding:20px;
+}
+.overlay.open{ display:flex; }
+.popup{
+  width:100%; max-width:520px; max-height:min(92vh, 860px);
+  background:var(--card); border-radius:22px;
+  box-shadow:var(--shadow);
+  display:flex; flex-direction:column; overflow:hidden;
+  border:1px solid var(--border);
+}
+@media (max-width:640px){
+  .overlay{ padding:0; }
+  .popup{ max-width:none; max-height:none; height:100%; border-radius:0; border:0; }
+}
+
+.screen{ display:none; flex-direction:column; min-height:0; flex:1; }
+.screen.active{ display:flex; }
+
+.popup-head{
+  display:flex; align-items:center; gap:8px;
+  padding:14px 14px 12px;
+  border-bottom:1px solid var(--border);
+  flex:none;
+}
+.popup-head h2{ font-size:21px; font-weight:800; letter-spacing:-.2px; flex:1; min-width:0; }
+.icon-btn{
+  width:48px; height:48px; flex:none;
+  border-radius:14px; background:var(--card-2); border:1px solid var(--border);
+  font-size:20px; font-weight:800; display:flex; align-items:center; justify-content:center;
+}
+.icon-btn:active{ transform:scale(.94); }
+
+.popup-body{ overflow-y:auto; flex:1; min-height:0; padding:14px; }
+.popup-foot{
+  flex:none; padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px));
+  border-top:1px solid var(--border); background:var(--card);
+  display:flex; flex-direction:column; gap:10px;
+}
+
+/* velká tlačítka */
+.btn{
+  min-height:56px; border-radius:var(--radius);
+  font-weight:800; font-size:16px; letter-spacing:.4px;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  padding:0 18px; width:100%;
+  transition:transform .08s ease;
+}
+.btn:active{ transform:scale(.98); }
+.btn-primary{ background:var(--primary); color:var(--on-primary); }
+.btn-primary:active{ background:var(--primary-press); }
+.btn-ghost{ background:var(--card-2); border:1.5px solid var(--border); }
+.btn-danger{ background:var(--danger); color:#fff; }
+html[data-theme="dark"] .btn-danger{ color:#14161c; }
+.btn-outline-danger{ background:var(--danger-soft); color:var(--danger); border:1.5px solid var(--danger); }
+
+/* ============ 1) SEZNAM ============ */
+.chips{
+  display:flex; gap:8px; overflow-x:auto; padding:2px 2px 10px;
+  scrollbar-width:none;
+}
+.chips::-webkit-scrollbar{ display:none; }
+.chip{
+  flex:none; min-height:44px; padding:8px 16px;
+  border-radius:999px; font-weight:800; font-size:14px;
+  background:var(--c-soft, var(--card-2));
+  color:var(--c, var(--text));
+  border:1.5px solid transparent;
+}
+.chip.all{ --c:var(--text); --c-soft:var(--card-2); border-color:var(--border); }
+.chip.selected{ background:var(--c, var(--text)); color:var(--on-cat); }
+.chip.all.selected{ background:var(--text); color:var(--card); }
+
+.item-list{ display:flex; flex-direction:column; gap:10px; }
+.item-row{
+  display:flex; align-items:center; gap:12px;
+  min-height:68px; padding:10px 14px 10px 0;
+  background:var(--card-2); border:1px solid var(--border);
+  border-radius:var(--radius); overflow:hidden;
+  text-align:left; width:100%;
+  position:relative;
+  transition:transform .08s ease;
+}
+.item-row:active{ transform:scale(.985); }
+.item-row::before{
+  content:""; position:absolute; left:0; top:0; bottom:0; width:6px;
+  background:var(--c); border-radius:6px 0 0 6px;
+}
+.item-avatar{
+  flex:none; width:46px; height:46px; margin-left:14px;
+  border-radius:14px; background:var(--c-soft);
+  border:1.5px solid var(--c);
+  display:flex; align-items:center; justify-content:center; font-size:23px;
+}
+.item-main{ flex:1; min-width:0; }
+.item-name{ font-weight:800; font-size:16px; }
+.item-sub{ color:var(--muted); font-weight:600; font-size:13.5px; margin-top:1px; }
+.item-note{ color:var(--c); font-weight:700; font-size:12.5px; margin-top:1px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.age-badge{
+  flex:none; font-weight:800; font-size:12.5px;
+  padding:6px 10px; border-radius:999px;
+}
+.age-badge.warn{ background:var(--warn-soft); color:var(--warn); border:1.5px solid var(--warn); }
+.age-badge.danger{ background:var(--danger-soft); color:var(--danger); border:1.5px solid var(--danger); }
+.empty-note{ text-align:center; color:var(--muted); font-weight:600; padding:32px 8px; }
+
+/* ============ 2) VÝBĚR PRODUKTU ============ */
+.pick-group{ margin-bottom:18px; }
+.pick-group-title{
+  display:flex; align-items:center; gap:8px;
+  font-weight:800; font-size:15px; color:var(--c);
+  margin:0 2px 8px;
+}
+.pick-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+.pick-tile{
+  min-height:68px; border-radius:var(--radius);
+  background:var(--c-soft); border:2px solid var(--c);
+  display:flex; align-items:center; gap:10px; padding:10px 14px;
+  font-weight:800; font-size:15.5px; text-align:left;
+  color:var(--text);
+  transition:transform .08s ease;
+}
+.pick-tile:active{ transform:scale(.97); }
+.pick-tile .p-emoji{
+  flex:none; width:38px; height:38px; border-radius:12px;
+  background:var(--c); color:var(--on-cat);
+  display:flex; align-items:center; justify-content:center; font-size:20px;
+}
+
+/* ============ 3) FORMULÁŘ ============ */
+.form-block{ margin-bottom:18px; }
+.form-label{ display:block; font-weight:800; font-size:13.5px; color:var(--muted);
+  text-transform:uppercase; letter-spacing:.6px; margin:0 2px 8px; }
+.weight-chips{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+.w-chip{
+  min-height:52px; border-radius:14px; font-weight:800; font-size:15px;
+  background:var(--card-2); border:1.5px solid var(--border);
+}
+.w-chip.selected{ background:var(--c, var(--primary)); color:var(--on-cat); border-color:transparent; }
+.text-input, .num-input, .sel{
+  width:100%; min-height:52px; padding:10px 14px;
+  border-radius:14px; border:1.5px solid var(--border);
+  background:var(--card-2); font-weight:700; font-size:16px;
+  outline:none;
+}
+.text-input:focus, .num-input:focus, .sel:focus{ border-color:var(--c, var(--primary)); }
+.stepper{
+  display:flex; align-items:center; gap:12px;
+  background:var(--card-2); border:1.5px solid var(--border);
+  border-radius:14px; padding:6px; width:max-content;
+}
+.stepper button{
+  width:52px; height:48px; border-radius:11px;
+  background:var(--card); border:1px solid var(--border);
+  font-size:24px; font-weight:800;
+}
+.stepper button:active{ transform:scale(.92); }
+.stepper .step-val{ min-width:44px; text-align:center; font-weight:800; font-size:20px; }
+.row-2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.form-cat-banner{
+  display:flex; align-items:center; gap:10px;
+  background:var(--c-soft); border:1.5px solid var(--c);
+  border-radius:var(--radius); padding:10px 14px; margin-bottom:18px;
+  font-weight:800; color:var(--c);
+}
+
+/* ============ 4) DIALOG VYJMUTÍ ============ */
+.remove-hero{
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  padding:10px 6px 18px; text-align:center;
+}
+.remove-hero .r-avatar{
+  width:64px; height:64px; border-radius:20px; font-size:32px;
+  background:var(--c-soft); border:2px solid var(--c);
+  display:flex; align-items:center; justify-content:center;
+}
+.remove-hero h3{ font-size:20px; font-weight:800; letter-spacing:-.2px; }
+.remove-hero p{ color:var(--muted); font-weight:700; }
+.remove-actions{ display:flex; flex-direction:column; gap:10px; }
+.hidden{ display:none !important; }
+
+/* ============ 4b) ZADAT MNOŽSTVÍ ============ */
+.amount-info{
+  background:var(--card-2); border:1px solid var(--border);
+  border-radius:var(--radius); padding:14px 16px; margin-bottom:14px;
+  font-weight:700; color:var(--muted);
+}
+.amount-info strong{ color:var(--text); }
+.amount-preview{
+  margin-top:12px; padding:14px 16px; border-radius:var(--radius);
+  background:var(--c-soft); border:1.5px solid var(--c);
+  font-weight:800; color:var(--c); font-size:17px;
+}
+
+/* ============ SNACKBAR ============ */
+.snackbar{
+  position:fixed; left:50%; bottom:22px; transform:translate(-50%, 140%);
+  z-index:200; display:flex; align-items:center; gap:14px;
+  background:var(--text); color:var(--card);
+  border-radius:var(--radius); padding:12px 12px 12px 18px;
+  box-shadow:var(--shadow); font-weight:700; font-size:15px;
+  max-width:calc(100vw - 32px);
+  transition:transform .25s ease;
+}
+.snackbar.show{ transform:translate(-50%, 0); }
+.snackbar button{
+  flex:none; min-height:44px; padding:8px 14px; border-radius:12px;
+  font-weight:800; letter-spacing:.5px;
+  color:var(--cat-kur); background:rgba(255,255,255,.08);
+}
+html[data-theme="dark"] .snackbar button{ background:rgba(0,0,0,.12); color:#9a5f00; }
+</style>
+</head>
+<body>
+
+<!-- ====== LIŠTA MOCKUPU ====== -->
+<div class="mockbar">
+  <div class="label">Návrh B — Barevné kategorie <small>statický mockup</small></div>
+  <button class="theme-btn" id="themeToggle" title="Přepnout světlý/tmavý režim">🌙</button>
+</div>
+
+<!-- ====== SIMULOVANÝ DASHBOARD ====== -->
+<div class="dashboard">
+  <div class="dash-head">
+    <h1>Kuchyně</h1>
+    <p>Home Assistant · simulovaný dashboard</p>
+  </div>
+  <div class="tiles">
+    <button class="tile tile-freezer" id="freezerTile">
+      <span class="t-emoji">🧊</span>
+      <span>
+        <span class="t-name">Mrazák</span>
+        <span class="t-sub" id="tileCount">9 položek</span>
+      </span>
+    </button>
+    <div class="tile dim">
+      <span class="t-emoji">💡</span>
+      <span><span class="t-name">Světla</span><span class="t-sub">2 zapnutá</span></span>
+    </div>
+    <div class="tile dim">
+      <span class="t-emoji">🌡️</span>
+      <span><span class="t-name">Termostat</span><span class="t-sub">21,5 °C</span></span>
+    </div>
+    <div class="tile dim">
+      <span class="t-emoji">🫧</span>
+      <span><span class="t-name">Pračka</span><span class="t-sub">Nečinná</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- ====== POPUP ====== -->
+<div class="overlay" id="overlay">
+  <div class="popup" role="dialog" aria-modal="true">
+
+    <!-- 1) SEZNAM -->
+    <section class="screen active" id="screen-list">
+      <div class="popup-head">
+        <h2>🧊 Mrazák</h2>
+        <button class="icon-btn" onclick="closePopup()" aria-label="Zavřít">✕</button>
+      </div>
+      <div class="popup-body">
+        <div class="chips" id="filterChips"></div>
+        <div class="item-list" id="itemList"></div>
+      </div>
+      <div class="popup-foot">
+        <button class="btn btn-primary" onclick="openPick()">＋ PŘIDAT</button>
+      </div>
+    </section>
+
+    <!-- 2) VÝBĚR PRODUKTU -->
+    <section class="screen" id="screen-pick">
+      <div class="popup-head">
+        <button class="icon-btn" onclick="showScreen('list')" aria-label="Zpět">←</button>
+        <h2>Co chcete přidat?</h2>
+        <button class="icon-btn" onclick="closePopup()" aria-label="Zavřít">✕</button>
+      </div>
+      <div class="popup-body" id="pickBody"></div>
+    </section>
+
+    <!-- 3) FORMULÁŘ -->
+    <section class="screen" id="screen-form">
+      <div class="popup-head">
+        <button class="icon-btn" onclick="formBack()" aria-label="Zpět">←</button>
+        <h2 id="formTitle">Přidat: Kuřecí prsa</h2>
+      </div>
+      <div class="popup-body">
+        <div class="form-cat-banner" id="formBanner"><span id="formBannerEmoji">🍗</span><span id="formBannerText">Kuřecí</span></div>
+
+        <div class="form-block hidden" id="customNameBlock">
+          <label class="form-label" for="customName">Název položky</label>
+          <input class="text-input" id="customName" type="text" placeholder="Např. Houskové knedlíky">
+        </div>
+
+        <div class="form-block">
+          <label class="form-label">Hmotnost — rychlá volba</label>
+          <div class="weight-chips" id="weightChips">
+            <button class="w-chip" data-g="250">250 g</button>
+            <button class="w-chip" data-g="500">500 g</button>
+            <button class="w-chip" data-g="750">750 g</button>
+            <button class="w-chip" data-g="1000">1000 g</button>
+          </div>
+        </div>
+
+        <div class="form-block">
+          <label class="form-label" for="customWeight">Vlastní hmotnost (g) — nepovinné</label>
+          <input class="num-input" id="customWeight" type="number" inputmode="numeric" min="1" placeholder="Např. 320">
+        </div>
+
+        <div class="form-block">
+          <label class="form-label">Počet balíčků</label>
+          <div class="stepper">
+            <button onclick="stepPacks(-1)" aria-label="Ubrat">−</button>
+            <span class="step-val" id="packVal">1</span>
+            <button onclick="stepPacks(1)" aria-label="Přidat">＋</button>
+          </div>
+        </div>
+
+        <div class="form-block">
+          <label class="form-label">Zamraženo</label>
+          <div class="row-2">
+            <select class="sel" id="selMonth"></select>
+            <select class="sel" id="selYear"></select>
+          </div>
+        </div>
+
+        <div class="form-block">
+          <label class="form-label" for="noteInput">Poznámka</label>
+          <input class="text-input" id="noteInput" type="text" placeholder="Např. na guláš, marinované…">
+        </div>
+      </div>
+      <div class="popup-foot">
+        <button class="btn btn-primary" id="formSubmitBtn" onclick="submitForm()">PŘIDAT DO MRAZÁKU</button>
+        <button class="btn btn-ghost" onclick="formBack()">ZRUŠIT</button>
+      </div>
+    </section>
+
+    <!-- 4) DIALOG VYJMUTÍ -->
+    <section class="screen" id="screen-remove">
+      <div class="popup-head">
+        <button class="icon-btn" onclick="showScreen('list')" aria-label="Zpět">←</button>
+        <h2>Vyjmout položku</h2>
+      </div>
+      <div class="popup-body">
+        <div class="remove-hero" id="removeHero">
+          <div class="r-avatar" id="removeEmoji">🍗</div>
+          <h3 id="removeTitle">Kuřecí prsa</h3>
+          <p id="removeSub">06/2026 · 500 g</p>
+        </div>
+        <div class="remove-actions">
+          <button class="btn btn-danger" onclick="removeWhole()">VYJMOUT CELÉ</button>
+          <button class="btn btn-outline-danger" id="halfBtn" onclick="removeHalf()">VYJMOUT POLOVINU – 250 g</button>
+          <button class="btn btn-ghost" id="amountBtn" onclick="openAmount()">ZADAT MNOŽSTVÍ</button>
+          <button class="btn btn-ghost" onclick="editItem()">UPRAVIT</button>
+          <button class="btn btn-ghost" onclick="showScreen('list')">ZRUŠIT</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4b) ZADAT MNOŽSTVÍ -->
+    <section class="screen" id="screen-amount">
+      <div class="popup-head">
+        <button class="icon-btn" onclick="showScreen('remove')" aria-label="Zpět">←</button>
+        <h2 id="amountTitle">Kolik vyjmout?</h2>
+      </div>
+      <div class="popup-body" id="amountBody">
+        <div class="amount-info">Aktuálně v mrazáku: <strong id="amountCurrent">500 g</strong></div>
+        <label class="form-label" for="amountInput">Vyjmout (g)</label>
+        <input class="num-input" id="amountInput" type="number" inputmode="numeric" min="1" placeholder="Např. 150">
+        <div class="amount-preview" id="amountPreview">Po vyjmutí zůstane: 500 g</div>
+      </div>
+      <div class="popup-foot">
+        <button class="btn btn-primary" onclick="confirmAmount()">POTVRDIT</button>
+        <button class="btn btn-ghost" onclick="showScreen('remove')">ZRUŠIT</button>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- ====== SNACKBAR ====== -->
+<div class="snackbar" id="snackbar">
+  <span id="snackText">Položka byla vyjmuta</span>
+  <button onclick="undoRemove()">VRÁTIT ZPĚT</button>
+</div>
+
+<script>
+/* ================= DATA (jen demo, v paměti stránky) ================= */
+const NOW = { y: 2026, m: 7 }; // červenec 2026
+
+const CATS = {
+  kur: { name: 'Kuřecí',  emoji: '🍗' },
+  vep: { name: 'Vepřové', emoji: '🐷' },
+  hov: { name: 'Hovězí',  emoji: '🐮' },
+  kru: { name: 'Krůtí',   emoji: '🦃' },
+  ryb: { name: 'Ryby',    emoji: '🐟' },
+  ost: { name: 'Ostatní', emoji: '🥦' },
+};
+
+const PRODUCTS = [
+  { cat:'kur', tiles:[ ['Prsa','Kuřecí prsa'], ['Stehna','Kuřecí stehna'], ['Křídla','Kuřecí křídla'], ['Celé kuře','Celé kuře'] ] },
+  { cat:'vep', tiles:[ ['Kýta','Vepřová kýta'], ['Krkovice','Vepřová krkovice'], ['Panenka','Vepřová panenka'] ] },
+  { cat:'hov', tiles:[ ['Mleté','Hovězí mleté'], ['Guláš','Hovězí na guláš'] ] },
+  { cat:'kru', tiles:[ ['Prsa','Krůtí prsa'], ['Stehna','Krůtí stehna'] ] },
+  { cat:'ryb', tiles:[ ['Losos','Losos filet'], ['Treska','Treska filety'] ] },
+  { cat:'ost', tiles:[ ['Jiné…', null] ] },
+];
+
+let nextId = 100;
+let items = [
+  { id:1, name:'Losos filet',       cat:'ryb', m:9,  y:2025, g:400,  note:'' },
+  { id:2, name:'Vepřová krkovice',  cat:'vep', m:11, y:2025, g:800,  note:'' },
+  { id:3, name:'Kuřecí stehna',     cat:'kur', m:1,  y:2026, g:1000, note:'' },
+  { id:4, name:'Hovězí mleté',      cat:'hov', m:2,  y:2026, g:500,  note:'na lasagne' },
+  { id:5, name:'Krůtí prsa',        cat:'kru', m:3,  y:2026, g:600,  note:'' },
+  { id:6, name:'Kuřecí prsa',       cat:'kur', m:4,  y:2026, g:500,  note:'' },
+  { id:7, name:'Vepřová panenka',   cat:'vep', m:5,  y:2026, g:null, note:'' },
+  { id:8, name:'Treska filety',     cat:'ryb', m:6,  y:2026, g:500,  note:'' },
+  { id:9, name:'Zeleninová směs',   cat:'ost', m:6,  y:2026, g:750,  note:'wok' },
+];
+
+const MONTHS = ['Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
+
+/* ================= STAV ================= */
+let filter = 'all';
+let currentProduct = null;   // { cat, name|null }
+let editingId = null;
+let removingId = null;
+let packs = 1;
+let undoItem = null, undoTimer = null;
+
+/* ================= POMOCNÉ ================= */
+const $ = id => document.getElementById(id);
+const pad2 = n => String(n).padStart(2,'0');
+const dateStr = it => pad2(it.m) + '/' + it.y;
+const weightStr = it => it.g != null ? it.g + ' g' : 'hmotnost neuvedena';
+const ageMonths = it => (NOW.y - it.y) * 12 + (NOW.m - it.m);
+const sorted = arr => [...arr].sort((a,b) => (a.y*12+a.m) - (b.y*12+b.m));
+const findItem = id => items.find(i => i.id === id);
+
+function updateTileCount(){
+  const n = items.length;
+  let word = 'položek';
+  if (n === 1) word = 'položka';
+  else if (n >= 2 && n <= 4) word = 'položky';
+  $('tileCount').textContent = n + ' ' + word;
+}
+
+/* ================= NAVIGACE ================= */
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $('screen-' + name).classList.add('active');
+}
+function openPopup(){ $('overlay').classList.add('open'); renderList(); showScreen('list'); }
+function closePopup(){ $('overlay').classList.remove('open'); }
+
+$('freezerTile').addEventListener('click', openPopup);
+$('overlay').addEventListener('click', e => { if (e.target === $('overlay')) closePopup(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePopup(); });
+
+/* ================= 1) SEZNAM ================= */
+function renderChips(){
+  const defs = [['all','Vše'], ...Object.entries(CATS).map(([k,v]) => [k, v.name])];
+  $('filterChips').innerHTML = defs.map(([k,label]) =>
+    `<button class="chip ${k==='all' ? 'all' : 'cat-'+k} ${filter===k ? 'selected' : ''}"
+      onclick="setFilter('${k}')">${label}</button>`
+  ).join('');
+}
+function setFilter(f){ filter = f; renderList(); }
+
+function renderList(){
+  renderChips();
+  updateTileCount();
+  const list = sorted(items).filter(it => filter === 'all' || it.cat === filter);
+  if (!list.length){
+    $('itemList').innerHTML = '<div class="empty-note">Žádné položky v této kategorii.</div>';
+    return;
+  }
+  $('itemList').innerHTML = list.map(it => {
+    const age = ageMonths(it);
+    let badge = '';
+    if (age >= 6){
+      const cls = age >= 9 ? 'danger' : 'warn';
+      badge = `<span class="age-badge ${cls}">${age} měs.</span>`;
+    }
+    return `
+      <button class="item-row cat-${it.cat}" onclick="openRemove(${it.id})">
+        <span class="item-avatar">${CATS[it.cat].emoji}</span>
+        <span class="item-main">
+          <div class="item-name">${it.name}</div>
+          <div class="item-sub">${dateStr(it)} · ${weightStr(it)}</div>
+          ${it.note ? `<div class="item-note">📝 ${it.note}</div>` : ''}
+        </span>
+        ${badge}
+      </button>`;
+  }).join('');
+}
+
+/* ================= 2) VÝBĚR PRODUKTU ================= */
+function openPick(){
+  $('pickBody').innerHTML = PRODUCTS.map(group => `
+    <div class="pick-group cat-${group.cat}">
+      <div class="pick-group-title">${CATS[group.cat].emoji} ${CATS[group.cat].name}</div>
+      <div class="pick-grid">
+        ${group.tiles.map(([label, full]) => `
+          <button class="pick-tile cat-${group.cat}"
+            onclick="pickProduct('${group.cat}', ${full ? `'${full}'` : 'null'})">
+            <span class="p-emoji">${CATS[group.cat].emoji}</span>${label}
+          </button>`).join('')}
+      </div>
+    </div>`).join('');
+  showScreen('pick');
+}
+
+function pickProduct(cat, name){
+  currentProduct = { cat, name };
+  editingId = null;
+  openForm();
+}
+
+/* ================= 3) FORMULÁŘ ================= */
+function fillSelects(){
+  $('selMonth').innerHTML = MONTHS.map((m,i) =>
+    `<option value="${i+1}" ${i+1 === NOW.m ? 'selected' : ''}>${m}</option>`).join('');
+  $('selYear').innerHTML = [2025,2026,2027].map(y =>
+    `<option value="${y}" ${y === 2026 ? 'selected' : ''}>${y}</option>`).join('');
+}
+
+function setFormCat(cat){
+  const banner = $('formBanner');
+  banner.className = 'form-cat-banner cat-' + cat;
+  $('formBannerEmoji').textContent = CATS[cat].emoji;
+  $('formBannerText').textContent = CATS[cat].name;
+  document.querySelectorAll('#weightChips .w-chip').forEach(ch => ch.classList.add('cat-' + cat));
+}
+
+function resetWeightChips(){
+  document.querySelectorAll('#weightChips .w-chip').forEach(ch => {
+    ch.className = 'w-chip';
+    ch.onclick = () => selectWeightChip(ch);
+  });
+}
+function selectWeightChip(chip){
+  const was = chip.classList.contains('selected');
+  document.querySelectorAll('#weightChips .w-chip').forEach(c => c.classList.remove('selected'));
+  if (!was){ chip.classList.add('selected'); $('customWeight').value = ''; }
+}
+$('customWeight').addEventListener('input', () => {
+  if ($('customWeight').value)
+    document.querySelectorAll('#weightChips .w-chip').forEach(c => c.classList.remove('selected'));
+});
+
+function openForm(){
+  resetWeightChips();
+  fillSelects();
+  packs = 1; $('packVal').textContent = '1';
+  $('customWeight').value = '';
+  $('noteInput').value = '';
+  $('customName').value = '';
+
+  const isCustom = !currentProduct.name;
+  $('customNameBlock').classList.toggle('hidden', !isCustom);
+  setFormCat(currentProduct.cat);
+
+  if (editingId != null){
+    const it = findItem(editingId);
+    $('formTitle').textContent = 'Upravit: ' + it.name;
+    $('formSubmitBtn').textContent = 'ULOŽIT ZMĚNY';
+    $('selMonth').value = it.m; $('selYear').value = it.y;
+    $('noteInput').value = it.note || '';
+    if (it.g != null){
+      const chip = document.querySelector(`#weightChips .w-chip[data-g="${it.g}"]`);
+      if (chip) chip.classList.add('selected'); else $('customWeight').value = it.g;
+    }
+    if (isCustom) $('customName').value = it.name;
+  } else {
+    $('formTitle').textContent = 'Přidat: ' + (currentProduct.name || 'Jiné');
+    $('formSubmitBtn').textContent = 'PŘIDAT DO MRAZÁKU';
+  }
+  // re-apply category color on chips (resetWeightChips smazal třídy)
+  document.querySelectorAll('#weightChips .w-chip').forEach(ch => ch.classList.add('cat-' + currentProduct.cat));
+  showScreen('form');
+}
+
+function stepPacks(d){
+  packs = Math.min(20, Math.max(1, packs + d));
+  $('packVal').textContent = packs;
+}
+
+function formBack(){
+  showScreen(editingId != null ? 'remove' : 'pick');
+}
+
+function submitForm(){
+  const chipSel = document.querySelector('#weightChips .w-chip.selected');
+  const custom = parseInt($('customWeight').value, 10);
+  const g = custom > 0 ? custom : (chipSel ? parseInt(chipSel.dataset.g, 10) : null);
+  const m = parseInt($('selMonth').value, 10);
+  const y = parseInt($('selYear').value, 10);
+  const note = $('noteInput').value.trim();
+  let name = currentProduct.name || $('customName').value.trim() || 'Jiné';
+
+  if (editingId != null){
+    const it = findItem(editingId);
+    Object.assign(it, { name, g, m, y, note });
+    editingId = null;
+  } else {
+    for (let i = 0; i < packs; i++)
+      items.push({ id: nextId++, name, cat: currentProduct.cat, m, y, g, note });
+  }
+  renderList();
+  showScreen('list');
+}
+
+/* ================= 4) DIALOG VYJMUTÍ ================= */
+function openRemove(id){
+  removingId = id;
+  const it = findItem(id);
+  $('removeHero').className = 'remove-hero cat-' + it.cat;
+  $('removeEmoji').className = 'r-avatar';
+  $('removeEmoji').textContent = CATS[it.cat].emoji;
+  $('removeTitle').textContent = 'Vyjmout ' + it.name + '?';
+  $('removeSub').textContent = dateStr(it) + ' · ' + weightStr(it);
+  const hasW = it.g != null;
+  $('halfBtn').classList.toggle('hidden', !hasW || it.g < 2);
+  $('amountBtn').classList.toggle('hidden', !hasW);
+  if (hasW) $('halfBtn').textContent = 'VYJMOUT POLOVINU – ' + Math.round(it.g / 2) + ' g';
+  showScreen('remove');
+}
+
+function removeWhole(){
+  const idx = items.findIndex(i => i.id === removingId);
+  if (idx < 0) return;
+  undoItem = items[idx];
+  items.splice(idx, 1);
+  renderList();
+  showScreen('list');
+  showSnackbar('Položka byla vyjmuta');
+}
+
+function removeHalf(){
+  const it = findItem(removingId);
+  if (!it || it.g == null) return;
+  it.g = Math.round(it.g / 2);
+  renderList();
+  showScreen('list');
+}
+
+function editItem(){
+  const it = findItem(removingId);
+  editingId = it.id;
+  currentProduct = { cat: it.cat, name: it.name };
+  openForm();
+}
+
+/* ================= 4b) ZADAT MNOŽSTVÍ ================= */
+function openAmount(){
+  const it = findItem(removingId);
+  $('amountTitle').textContent = 'Kolik vyjmout?';
+  $('amountBody').querySelector('.amount-preview').className = 'amount-preview cat-' + it.cat;
+  $('amountCurrent').textContent = it.g + ' g';
+  $('amountInput').value = '';
+  $('amountInput').max = it.g;
+  updateAmountPreview();
+  showScreen('amount');
+  setTimeout(() => $('amountInput').focus(), 50);
+}
+
+function updateAmountPreview(){
+  const it = findItem(removingId);
+  if (!it) return;
+  const v = parseInt($('amountInput').value, 10) || 0;
+  const left = Math.max(0, it.g - v);
+  $('amountPreview').textContent = 'Po vyjmutí zůstane: ' + left + ' g';
+}
+$('amountInput').addEventListener('input', updateAmountPreview);
+
+function confirmAmount(){
+  const it = findItem(removingId);
+  const v = parseInt($('amountInput').value, 10);
+  if (!it || !(v > 0)) return;
+  if (v >= it.g){
+    removeWhole();
+  } else {
+    it.g -= v;
+    renderList();
+    showScreen('list');
+  }
+}
+
+/* ================= SNACKBAR + UNDO ================= */
+function showSnackbar(text){
+  $('snackText').textContent = text;
+  $('snackbar').classList.add('show');
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(hideSnackbar, 6000);
+}
+function hideSnackbar(){
+  $('snackbar').classList.remove('show');
+  undoItem = null;
+}
+function undoRemove(){
+  if (undoItem){
+    items.push(undoItem);
+    undoItem = null;
+    renderList();
+  }
+  clearTimeout(undoTimer);
+  $('snackbar').classList.remove('show');
+}
+
+/* ================= TÉMA ================= */
+$('themeToggle').addEventListener('click', () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme === 'dark';
+  root.dataset.theme = dark ? 'light' : 'dark';
+  $('themeToggle').textContent = dark ? '🌙' : '☀️';
+});
+
+/* init */
+renderList();
+</script>
+</body>
+</html>
