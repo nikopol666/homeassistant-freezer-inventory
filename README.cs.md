@@ -119,7 +119,15 @@ sort: oldest_first     # oldest_first | newest_first
 old_months: 6          # přepíše globální práh zvýraznění
 language: cs           # cs | en (výchozí dle integrace)
 auto_close: 60         # zavřít popup po N sekundách nečinnosti
+label_format: a4       # a4 | 50x30 | 40x30 | 40x12 | 30x15 | libovolné "ŠxV" v mm
+label_action: print    # print (systémový tisk) | image (PNG pro aplikaci tiskárny)
 ```
+
+### Štítkové tiskárny (Niimbot apod.)
+
+- `label_format: 50x30` (nebo libovolné `ŠxV` v mm) tiskne **jeden štítek na stránku** přesně v dané velikosti — pro štítkové tiskárny s ovladačem (Brother, Dymo…).
+- `label_action: image` vygeneruje štítek jako **PNG obrázek** a nabídne sdílení (nebo ho stáhne) — nasdílíte ho rovnou do **aplikace Niimbot** (či jiné aplikace tiskárny) a vytisknete odtud. Tento režim funguje i v mobilní aplikaci Home Assistant.
+- Běžný tiskový dialog v companion aplikaci nefunguje (její WebView tisk nepodporuje) — karta to místo tichého selhání rovnou řekne; použijte prohlížeč nebo režim obrázku.
 
 ## Hmotnost a kusy
 

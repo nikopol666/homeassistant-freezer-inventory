@@ -103,6 +103,8 @@ export const cs: Record<string, string> = {
 
   // Labels & scanning
   print_label: "VYTISKNOUT ŠTÍTEK",
+  label_downloaded:
+    "Štítek uložen jako obrázek (PNG). Otevřete ho v aplikaci své tiskárny (např. Niimbot) a vytiskněte.",
   print_unsupported_app:
     "Tisk v aplikaci Home Assistant nefunguje. Otevřete Home Assistant v prohlížeči (např. Chrome) a vytiskněte štítek odtud.",
   print_all_labels: "Tisk štítků všech položek",

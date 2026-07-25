@@ -24,6 +24,11 @@ const TEXTS: Record<string, Record<string, string>> = {
     language: "Jazyk karty",
     lang_auto: "Podle integrace",
     auto_close: "Automaticky zavřít po nečinnosti (sekundy, prázdné = vypnuto)",
+    label_format: "Formát štítku",
+    label_a4: "Arch A4 (88×36 mm)",
+    label_action: "Tisk štítků",
+    label_print: "Tisková fronta (běžná tiskárna / driver)",
+    label_image: "Obrázek PNG pro aplikaci tiskárny (Niimbot…)",
   },
   en: {
     freezer_id: "Freezer",
@@ -44,6 +49,11 @@ const TEXTS: Record<string, Record<string, string>> = {
     language: "Card language",
     lang_auto: "Follow integration",
     auto_close: "Auto-close after inactivity (seconds, empty = off)",
+    label_format: "Label format",
+    label_a4: "A4 sheet (88×36 mm)",
+    label_action: "Label printing",
+    label_print: "Print queue (regular printer / driver)",
+    label_image: "PNG image for a label-printer app (Niimbot…)",
   },
 };
 
@@ -225,6 +235,48 @@ class FreezerInventoryCardEditor extends LitElement {
               });
             }}
           />
+        </div>
+
+        <div class="field">
+          <label>${t.label_format}</label>
+          <select
+            .value=${c.label_format ?? "a4"}
+            @change=${(e: Event) => {
+              const value = (e.target as HTMLSelectElement).value;
+              this._update({
+                label_format: value === "a4" ? undefined : value,
+              });
+            }}
+          >
+            <option value="a4" ?selected=${!c.label_format}>${t.label_a4}</option>
+            ${["50x30", "40x30", "40x12", "30x15"].map(
+              (size) => html`
+                <option value=${size} ?selected=${c.label_format === size}>
+                  ${size.replace("x", " × ")} mm
+                </option>
+              `
+            )}
+          </select>
+        </div>
+
+        <div class="field">
+          <label>${t.label_action}</label>
+          <select
+            .value=${c.label_action ?? "print"}
+            @change=${(e: Event) => {
+              const value = (e.target as HTMLSelectElement).value;
+              this._update({
+                label_action: value === "image" ? "image" : undefined,
+              });
+            }}
+          >
+            <option value="print" ?selected=${c.label_action !== "image"}>
+              ${t.label_print}
+            </option>
+            <option value="image" ?selected=${c.label_action === "image"}>
+              ${t.label_image}
+            </option>
+          </select>
         </div>
 
         <div class="field">

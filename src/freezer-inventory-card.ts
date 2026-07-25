@@ -30,7 +30,12 @@ import "./views/manage-view";
 import "./views/scan-view";
 import "./views/stats-view";
 import type { ItemFormResult } from "./views/item-form";
-import { printLabels, printUnsupported } from "./labels";
+import {
+  parseLabelFormat,
+  printLabels,
+  printUnsupported,
+  shareLabelImages,
+} from "./labels";
 
 const CARD_VERSION = "1.1.1";
 const DEFAULT_FREEZER = "main_freezer";
@@ -506,13 +511,26 @@ class FreezerInventoryCard extends LitElement {
     }
   }
 
-  private _print(items: FreezerItem[]) {
+  private async _print(items: FreezerItem[]) {
     const l = this._localize;
+    const format = parseLabelFormat(this._config.label_format);
+    if (this._config.label_action === "image") {
+      // PNG for label-printer apps (Niimbot & co.) via share sheet/download
+      try {
+        const delivery = await shareLabelImages(items, l, format);
+        if (delivery === "downloaded") {
+          this._showToast(l("label_downloaded"));
+        }
+      } catch {
+        this._showToast(l("err_generic"));
+      }
+      return;
+    }
     if (printUnsupported()) {
       this._showToast(l("print_unsupported_app"));
       return;
     }
-    printLabels(items, l);
+    printLabels(items, l, format);
   }
 
   private _onScanFound(e: CustomEvent<{ itemId: string }>) {

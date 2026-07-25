@@ -119,7 +119,15 @@ sort: oldest_first     # oldest_first | newest_first
 old_months: 6          # highlight threshold override
 language: en           # cs | en (defaults to the integration language)
 auto_close: 60         # close the popup after N seconds of inactivity
+label_format: a4       # a4 | 50x30 | 40x30 | 40x12 | 30x15 | any "WxH" in mm
+label_action: print    # print (system dialog) | image (PNG for label-printer apps)
 ```
+
+### Label printers (Niimbot & co.)
+
+- `label_format: 50x30` (or any `WxH` in mm) prints **one label per page** in exactly that size — for label printers with a print driver (Brother, Dymo…).
+- `label_action: image` renders the label as a **PNG image** and opens the share sheet (or downloads the file) — share it straight into the **Niimbot app** (or any label-printer app) and print from there. This mode also works inside the Home Assistant companion app.
+- The regular print dialog does not work in the companion app (its WebView has no print support) — the card tells you so instead of failing silently; use a browser or the image mode.
 
 ## Weight and pieces
 

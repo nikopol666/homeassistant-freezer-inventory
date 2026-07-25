@@ -95,6 +95,10 @@ export interface CardConfig {
   language?: "cs" | "en";
   /** Close the popup after this many seconds of inactivity (0/unset = off). */
   auto_close?: number;
+  /** Label size: "a4" sheet (default) or "<W>x<H>" in mm, e.g. "50x30". */
+  label_format?: string;
+  /** "print" (default) or "image" — PNG for label-printer apps (Niimbot…). */
+  label_action?: "print" | "image";
 }
 
 export type UpdatePayload =

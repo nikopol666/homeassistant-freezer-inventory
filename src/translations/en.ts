@@ -104,6 +104,8 @@ export const en: Record<string, string> = {
 
   // Labels & scanning
   print_label: "PRINT LABEL",
+  label_downloaded:
+    "Label saved as a PNG image. Open it in your label printer app (e.g. Niimbot) and print.",
   print_unsupported_app:
     "Printing does not work in the Home Assistant companion app. Open Home Assistant in a browser (e.g. Chrome) and print from there.",
   print_all_labels: "Print labels for all items",
