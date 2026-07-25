@@ -36,15 +36,29 @@ A custom Home Assistant integration + Lovelace card for tracking individual pack
 
 ## Screenshots
 
-| Freezer list (dark) | Add form — tablet mode |
-|---|---|
-| ![Freezer list with category filters and old-item highlighting](docs/images/list-dark.png) | ![Two-column add form with weight and piece quick-picks](docs/images/form-tablet-dark.png) |
+**Dashboard tile** — click opens the popup:
 
-| Product picker (light) | Remove dialog (phone) | Preset management |
-|---|---|---|
-| ![Category-grouped product picker](docs/images/picker-light.png) | ![Remove confirmation with half/amount options](docs/images/remove-mobile-dark.png) | ![Category and product management](docs/images/manage-light.png) |
+<img src="docs/images/tile.png" alt="Dashboard tile" width="400"/>
 
-Dashboard tile: ![Dashboard tile](docs/images/tile.png)
+**Freezer list** with category filters and old-item highlighting (dark mode):
+
+![Freezer list with category filters and old-item highlighting](docs/images/list-dark.png)
+
+**Add form** — two-column tablet mode with weight and piece quick-picks:
+
+![Two-column add form with weight and piece quick-picks](docs/images/form-tablet-dark.png)
+
+**Product picker** grouped by category (light mode):
+
+![Category-grouped product picker](docs/images/picker-light.png)
+
+**Remove dialog** on a phone — whole / half / custom amount:
+
+<img src="docs/images/remove-mobile-dark.png" alt="Remove confirmation with half/amount options" width="400"/>
+
+**Preset management** — categories and products:
+
+![Category and product management](docs/images/manage-light.png)
 
 ## Installation
 

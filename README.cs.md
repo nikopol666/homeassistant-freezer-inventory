@@ -36,15 +36,29 @@ Vlastní integrace a Lovelace karta pro Home Assistant určená k evidenci jedno
 
 ## Ukázky
 
-| Seznam mrazáku (tmavý režim) | Formulář přidání — tabletový režim |
-|---|---|
-| ![Seznam s filtry kategorií a zvýrazněním starých položek](docs/images/list-dark.png) | ![Dvousloupcový formulář s rychlými volbami hmotnosti a kusů](docs/images/form-tablet-dark.png) |
+**Dlaždice na dashboardu** — kliknutím se otevře popup:
 
-| Výběr produktu (světlý režim) | Dialog vyjmutí (mobil) | Správa předvoleb |
-|---|---|---|
-| ![Výběr produktu podle kategorií](docs/images/picker-light.png) | ![Potvrzení vyjmutí s volbami polovina/množství](docs/images/remove-mobile-dark.png) | ![Správa kategorií a produktů](docs/images/manage-light.png) |
+<img src="docs/images/tile.png" alt="Dlaždice na dashboardu" width="400"/>
 
-Dlaždice na dashboardu: ![Dlaždice](docs/images/tile.png)
+**Seznam mrazáku** s filtry kategorií a zvýrazněním starých položek (tmavý režim):
+
+![Seznam s filtry kategorií a zvýrazněním starých položek](docs/images/list-dark.png)
+
+**Formulář přidání** — dvousloupcový tabletový režim s rychlými volbami hmotnosti a kusů:
+
+![Dvousloupcový formulář s rychlými volbami hmotnosti a kusů](docs/images/form-tablet-dark.png)
+
+**Výběr produktu** podle kategorií (světlý režim):
+
+![Výběr produktu podle kategorií](docs/images/picker-light.png)
+
+**Dialog vyjmutí** na mobilu — celé / polovina / vlastní množství:
+
+<img src="docs/images/remove-mobile-dark.png" alt="Potvrzení vyjmutí s volbami polovina/množství" width="400"/>
+
+**Správa předvoleb** — kategorie a produkty:
+
+![Správa kategorií a produktů](docs/images/manage-light.png)
 
 ## Instalace
 
