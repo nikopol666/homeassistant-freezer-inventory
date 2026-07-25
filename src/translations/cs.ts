@@ -103,6 +103,8 @@ export const cs: Record<string, string> = {
 
   // Labels & scanning
   print_label: "VYTISKNOUT ŠTÍTEK",
+  print_unsupported_app:
+    "Tisk v aplikaci Home Assistant nefunguje. Otevřete Home Assistant v prohlížeči (např. Chrome) a vytiskněte štítek odtud.",
   print_all_labels: "Tisk štítků všech položek",
   scan_title: "Naskenujte štítek",
   scan_hint: "Namiřte kameru na QR kód na balíčku.",

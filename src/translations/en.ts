@@ -104,6 +104,8 @@ export const en: Record<string, string> = {
 
   // Labels & scanning
   print_label: "PRINT LABEL",
+  print_unsupported_app:
+    "Printing does not work in the Home Assistant companion app. Open Home Assistant in a browser (e.g. Chrome) and print from there.",
   print_all_labels: "Print labels for all items",
   scan_title: "Scan a label",
   scan_hint: "Point the camera at the QR code on the package.",

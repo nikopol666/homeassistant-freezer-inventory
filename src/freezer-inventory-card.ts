@@ -30,9 +30,9 @@ import "./views/manage-view";
 import "./views/scan-view";
 import "./views/stats-view";
 import type { ItemFormResult } from "./views/item-form";
-import { printLabels } from "./labels";
+import { printLabels, printUnsupported } from "./labels";
 
-const CARD_VERSION = "1.1.0";
+const CARD_VERSION = "1.1.1";
 const DEFAULT_FREEZER = "main_freezer";
 const UNDO_TIMEOUT = 6000;
 
@@ -506,6 +506,15 @@ class FreezerInventoryCard extends LitElement {
     }
   }
 
+  private _print(items: FreezerItem[]) {
+    const l = this._localize;
+    if (printUnsupported()) {
+      this._showToast(l("print_unsupported_app"));
+      return;
+    }
+    printLabels(items, l);
+  }
+
   private _onScanFound(e: CustomEvent<{ itemId: string }>) {
     const item = this._items.find((i) => i.id === e.detail.itemId);
     if (item) {
@@ -704,7 +713,7 @@ class FreezerInventoryCard extends LitElement {
               this._errorText = "";
             }}
             @fi-print-label=${() =>
-              this._selectedItem && printLabels([this._selectedItem], l)}
+              this._selectedItem && this._print([this._selectedItem])}
             @fi-remove-cancel=${() =>
               this._view === "amount"
                 ? ((this._view = "remove"), (this._errorText = ""))
@@ -760,7 +769,7 @@ class FreezerInventoryCard extends LitElement {
             .localize=${l}
             .categories=${this._categories}
             .products=${this._products}
-            @fi-print-all=${() => printLabels(this._items, l)}
+            @fi-print-all=${() => this._print(this._items)}
             @fi-manage-close=${() => this._backToList()}
           ></fi-manage-view>
         `;

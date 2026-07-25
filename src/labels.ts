@@ -109,12 +109,22 @@ export function printLabels(items: FreezerItem[], l: LocalizeFunc): void {
 </html>`);
   doc.close();
 
-  iframe.onload = () => {
-    const win = iframe.contentWindow;
-    if (win) {
-      win.focus();
-      win.print();
-    }
-    setTimeout(() => iframe.remove(), 60_000);
-  };
+  // The document is written synchronously (no external resources), so it is
+  // complete right after close() — waiting for iframe.onload here would miss
+  // the event entirely (it fires during close, before a handler could attach).
+  const win = iframe.contentWindow;
+  if (win) {
+    win.focus();
+    win.print();
+  }
+  setTimeout(() => iframe.remove(), 60_000);
+}
+
+/**
+ * The Home Assistant companion app WebView has no print support at all
+ * (window.print is a silent no-op there) — detect it so the card can show
+ * an explanation instead of doing nothing.
+ */
+export function printUnsupported(): boolean {
+  return navigator.userAgent.includes("Home Assistant");
 }
