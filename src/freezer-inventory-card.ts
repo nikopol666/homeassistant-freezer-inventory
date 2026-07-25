@@ -27,7 +27,7 @@ import "./views/remove-dialog";
 import "./views/manage-view";
 import type { ItemFormResult } from "./views/item-form";
 
-const CARD_VERSION = "1.0.1";
+const CARD_VERSION = "1.0.2";
 const DEFAULT_FREEZER = "main_freezer";
 const UNDO_TIMEOUT = 6000;
 
@@ -108,6 +108,7 @@ class FreezerInventoryCard extends LitElement {
     if (this._toastTimer) clearTimeout(this._toastTimer);
     if (this._autoCloseTimer) clearTimeout(this._autoCloseTimer);
     this._lockPageOverscroll(false);
+    window.removeEventListener("popstate", this._onPopstate);
   }
 
   /** Restart the inactivity timer that auto-closes the popup. */
@@ -237,6 +238,24 @@ class FreezerInventoryCard extends LitElement {
 
   private _focusPending = false;
   private _prevOverscroll?: { html: string; body: string };
+  private _historyPushed = false;
+
+  /**
+   * Android/browser back while the popup is open: go back to the list from a
+   * subview, or close the popup — never leave the dashboard (same history
+   * trick HA's own dialogs use).
+   */
+  private _onPopstate = () => {
+    this._historyPushed = false;
+    if (!this._dialogOpen) return;
+    if (this._view !== "list" && this._config.display_mode !== "list") {
+      this._backToList();
+      window.history.pushState({ freezerInventoryDialog: true }, "");
+      this._historyPushed = true;
+    } else {
+      this._closeDialog(true);
+    }
+  };
 
   /** Disable pull-to-refresh while the popup is open (kiosk tablets). */
   private _lockPageOverscroll(lock: boolean) {
@@ -262,10 +281,15 @@ class FreezerInventoryCard extends LitElement {
     this._dialogOpen = true;
     this._focusPending = true;
     this._lockPageOverscroll(true);
+    if (!this._historyPushed) {
+      window.history.pushState({ freezerInventoryDialog: true }, "");
+      this._historyPushed = true;
+      window.addEventListener("popstate", this._onPopstate);
+    }
     this._resetAutoClose();
   }
 
-  private _closeDialog() {
+  private _closeDialog(fromHistory = false) {
     this._dialogOpen = false;
     this._view = "list";
     this._selectedItem = null;
@@ -274,6 +298,12 @@ class FreezerInventoryCard extends LitElement {
     this._errorText = "";
     this._lockPageOverscroll(false);
     if (this._autoCloseTimer) clearTimeout(this._autoCloseTimer);
+    window.removeEventListener("popstate", this._onPopstate);
+    if (this._historyPushed && !fromHistory) {
+      // Consume the history entry we pushed so back works normally again
+      this._historyPushed = false;
+      window.history.back();
+    }
   }
 
   private _backToList() {
