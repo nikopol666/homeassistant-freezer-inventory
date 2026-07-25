@@ -112,6 +112,8 @@ export const en: Record<string, string> = {
   scan_title: "Scan a label",
   scan_hint: "Point the camera at the QR code on the package.",
   scan_unsupported: "QR scanning is not supported in this browser.",
+  scan_https:
+    "The camera requires a secure connection (HTTPS). Open Home Assistant via an HTTPS address (e.g. Nabu Casa).",
   scan_camera_denied: "Could not start the camera. Check permissions.",
   scan_not_found: "The scanned item is not in this freezer.",
   scan_button: "Scan a label",

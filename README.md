@@ -68,6 +68,12 @@ A custom Home Assistant integration + Lovelace card for tracking individual pack
 
 <img src="docs/images/stats-light.png" alt="Statistics card" width="460"/>
 
+## Requirements
+
+- **Home Assistant 2025.8.0 or newer** (enforced by HACS via `hacs.json`)
+- Integration brand icons in the HA UI show up on HA **2026.3+** (older versions simply show no icon)
+- QR **scanning** works in any browser (a QR decoder is bundled), but the camera itself requires **HTTPS** access to Home Assistant (e.g. Nabu Casa) and camera permission — in Fully Kiosk enable *Camera Access*, in the companion app grant the camera permission to the app
+
 ## Installation
 
 ### HACS (recommended)
@@ -126,6 +132,7 @@ label_action: print    # print (system dialog) | image (PNG for label-printer ap
 ### Label printers (Niimbot & co.)
 
 - `label_format: 50x30` (or any `WxH` in mm) prints **one label per page** in exactly that size — for label printers with a print driver (Brother, Dymo…).
+- QR **scanning** uses the native BarcodeDetector where available and a bundled decoder everywhere else — it works in Chrome, Firefox, Safari and the companion app alike (HTTPS required for the camera)
 - `label_action: image` renders the label as a **PNG image** and opens the share sheet (or downloads the file) — share it straight into the **Niimbot app** (or any label-printer app) and print from there. This mode also works inside the Home Assistant companion app.
 - The regular print dialog does not work in the companion app (its WebView has no print support) — the card tells you so instead of failing silently; use a browser or the image mode.
 

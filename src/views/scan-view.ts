@@ -1,5 +1,6 @@
 import { LitElement, html, css, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
+import jsQR from "jsqr";
 import type { LocalizeFunc } from "../localize";
 import { fireEvent } from "../ha-helpers";
 import { sharedStyles } from "../styles";
@@ -21,8 +22,14 @@ declare global {
   }
 }
 
+/**
+ * Always true: browsers without the BarcodeDetector API (companion app,
+ * Firefox, iOS Safari, desktop Chrome) use the bundled jsQR decoder instead.
+ * The camera itself still needs a secure (HTTPS) connection — the scan view
+ * explains that when it applies.
+ */
 export function scanSupported(): boolean {
-  return typeof window.BarcodeDetector === "function";
+  return true;
 }
 
 /** Camera view: scan a printed label QR to jump straight to the item. */
@@ -47,8 +54,9 @@ export class FiScanView extends LitElement {
 
   private async _start() {
     const l = this.localize;
-    if (!scanSupported()) {
-      this._error = l("scan_unsupported");
+    if (!navigator.mediaDevices?.getUserMedia) {
+      // Insecure context (plain http://) — the camera API does not exist
+      this._error = l("scan_https");
       return;
     }
     try {
@@ -66,24 +74,48 @@ export class FiScanView extends LitElement {
     video.srcObject = this._stream;
     await video.play().catch(() => undefined);
 
-    const detector = new window.BarcodeDetector!({ formats: ["qr_code"] });
+    const detect = this._makeDetector(video);
     this._timer = setInterval(async () => {
       if (this._found || !video.videoWidth) return;
       try {
-        const codes = await detector.detect(video);
-        for (const code of codes) {
-          const itemId = itemIdFromQr(code.rawValue);
-          if (itemId) {
-            this._found = true;
-            this._stop();
-            fireEvent(this, "fi-scan-found", { itemId });
-            return;
-          }
+        const payload = await detect();
+        const itemId = payload ? itemIdFromQr(payload) : null;
+        if (itemId) {
+          this._found = true;
+          this._stop();
+          fireEvent(this, "fi-scan-found", { itemId });
         }
       } catch {
         // detection errors are transient; keep trying
       }
     }, 300);
+  }
+
+  /** Native BarcodeDetector when available, bundled jsQR otherwise. */
+  private _makeDetector(
+    video: HTMLVideoElement
+  ): () => Promise<string | null> {
+    if (typeof window.BarcodeDetector === "function") {
+      const detector = new window.BarcodeDetector({ formats: ["qr_code"] });
+      return async () => {
+        const codes = await detector.detect(video);
+        return codes[0]?.rawValue ?? null;
+      };
+    }
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+    return async () => {
+      // Downscale for decode speed; jsQR handles ~480 px wide frames well
+      const scale = Math.min(1, 480 / video.videoWidth);
+      canvas.width = Math.round(video.videoWidth * scale);
+      canvas.height = Math.round(video.videoHeight * scale);
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(image.data, image.width, image.height, {
+        inversionAttempts: "dontInvert",
+      });
+      return code?.data ?? null;
+    };
   }
 
   private _stop() {

@@ -68,6 +68,12 @@ Vlastní integrace a Lovelace karta pro Home Assistant určená k evidenci jedno
 
 <img src="docs/images/stats-light.png" alt="Karta statistik" width="460"/>
 
+## Požadavky
+
+- **Home Assistant 2025.8.0 nebo novější** (HACS to vynucuje přes `hacs.json`)
+- Ikony integrace v UI Home Assistantu se zobrazují od HA **2026.3+** (starší verze prostě ikonu nezobrazí)
+- **Skenování QR** funguje v libovolném prohlížeči (dekodér je přibalený v kartě), samotná kamera ale vyžaduje přístup k HA přes **HTTPS** (např. Nabu Casa) a povolení kamery — ve Fully Kiosku zapněte *Camera Access*, v companion aplikaci povolte aplikaci kameru
+
 ## Instalace
 
 ### HACS (doporučeno)
@@ -126,6 +132,7 @@ label_action: print    # print (systémový tisk) | image (PNG pro aplikaci tisk
 ### Štítkové tiskárny (Niimbot apod.)
 
 - `label_format: 50x30` (nebo libovolné `ŠxV` v mm) tiskne **jeden štítek na stránku** přesně v dané velikosti — pro štítkové tiskárny s ovladačem (Brother, Dymo…).
+- **Skenování QR** používá nativní BarcodeDetector, kde je k dispozici, a jinde přibalený dekodér — funguje v Chromu, Firefoxu, Safari i companion aplikaci (kamera vyžaduje HTTPS)
 - `label_action: image` vygeneruje štítek jako **PNG obrázek** a nabídne sdílení (nebo ho stáhne) — nasdílíte ho rovnou do **aplikace Niimbot** (či jiné aplikace tiskárny) a vytisknete odtud. Tento režim funguje i v mobilní aplikaci Home Assistant.
 - Běžný tiskový dialog v companion aplikaci nefunguje (její WebView tisk nepodporuje) — karta to místo tichého selhání rovnou řekne; použijte prohlížeč nebo režim obrázku.
 

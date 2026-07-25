@@ -111,6 +111,8 @@ export const cs: Record<string, string> = {
   scan_title: "Naskenujte štítek",
   scan_hint: "Namiřte kameru na QR kód na balíčku.",
   scan_unsupported: "Skenování QR kódů není v tomto prohlížeči podporováno.",
+  scan_https:
+    "Kamera vyžaduje zabezpečené připojení (HTTPS). Otevřete Home Assistant přes HTTPS adresu (např. Nabu Casa).",
   scan_camera_denied: "Kameru se nepodařilo spustit. Zkontrolujte oprávnění.",
   scan_not_found: "Naskenovaná položka v tomto mrazáku není.",
   scan_button: "Naskenovat štítek",
