@@ -3,10 +3,12 @@ import { property, state } from "lit/decorators.js";
 import type {
   CardConfig,
   Category,
+  FreezerInfo,
   FreezerItem,
   HomeAssistant,
   IntegrationConfig,
   Product,
+  Stats,
   UndoState,
   UpdatePayload,
   ViewName,
@@ -25,9 +27,12 @@ import "./views/product-picker";
 import "./views/item-form";
 import "./views/remove-dialog";
 import "./views/manage-view";
+import "./views/scan-view";
+import "./views/stats-view";
 import type { ItemFormResult } from "./views/item-form";
+import { printLabels } from "./labels";
 
-const CARD_VERSION = "1.0.2";
+const CARD_VERSION = "1.1.0";
 const DEFAULT_FREEZER = "main_freezer";
 const UNDO_TIMEOUT = 6000;
 
@@ -55,6 +60,8 @@ class FreezerInventoryCard extends LitElement {
   @state() private _toast: { text: string; undo: UndoState | null } | null = null;
   @state() private _loaded = false;
   @state() private _connectionError = "";
+  @state() private _freezers: FreezerInfo[] = [];
+  @state() private _stats: Stats | null = null;
 
   private _unsub?: Promise<() => Promise<void>>;
   private _toastTimer?: ReturnType<typeof setTimeout>;
@@ -156,14 +163,19 @@ class FreezerInventoryCard extends LitElement {
     if (this._initStarted || !this.hass || !this.isConnected) return;
     this._initStarted = true;
     try {
-      const [integration, products, categories] = await Promise.all([
+      const [integration, products, categories, freezers] = await Promise.all([
         ws.fetchConfig(this.hass),
         ws.fetchProducts(this.hass),
         ws.fetchCategories(this.hass),
+        ws.fetchFreezers(this.hass),
       ]);
       this._integration = integration;
       this._products = products;
       this._categories = categories;
+      this._freezers = freezers;
+      if (this._config.display_mode === "stats") {
+        this._stats = await ws.fetchStats(this.hass, this._freezerId);
+      }
       this._unsub = ws.subscribeUpdates(this.hass, (payload) =>
         this._handleUpdate(payload)
       );
@@ -177,7 +189,14 @@ class FreezerInventoryCard extends LitElement {
   }
 
   private async _handleUpdate(payload: UpdatePayload) {
+    if (payload.type === "freezers" && this.hass) {
+      this._freezers = await ws.fetchFreezers(this.hass);
+      return;
+    }
     if (payload.type === "items") {
+      if (this._config.display_mode === "stats" && this.hass) {
+        this._stats = await ws.fetchStats(this.hass, this._freezerId);
+      }
       if (payload.freezer_id !== this._freezerId) return;
       this._items = payload.items;
       this._loaded = true;
@@ -473,6 +492,32 @@ class FreezerInventoryCard extends LitElement {
     await this._onRemoveAll();
   }
 
+  private async _onMoveTo(freezer: FreezerInfo) {
+    const item = this._selectedItem;
+    if (!item) return;
+    const l = this._localize;
+    const ok = await this._mutate(
+      () => ws.moveItem(this.hass!, item.id, this._freezerId, freezer.id),
+      l("err_generic")
+    );
+    if (ok) {
+      this._backToList();
+      this._showToast(l("item_moved", { name: freezer.name }));
+    }
+  }
+
+  private _onScanFound(e: CustomEvent<{ itemId: string }>) {
+    const item = this._items.find((i) => i.id === e.detail.itemId);
+    if (item) {
+      this._selectedItem = item;
+      this._view = "remove";
+      this._errorText = "";
+    } else {
+      this._backToList();
+      this._showToast(this._localize("scan_not_found"));
+    }
+  }
+
   // ------------------------------------------------------------------
   // Rendering
 
@@ -483,10 +528,40 @@ class FreezerInventoryCard extends LitElement {
       </ha-card>`;
     }
 
+    if (this._config.display_mode === "stats") {
+      return html`${this._renderStats()} ${this._renderToast()}`;
+    }
     const isList = this._config.display_mode === "list";
     return html`
       ${isList ? this._renderInlineList() : this._renderTile()}
       ${this._renderDialog()} ${this._renderToast()}
+    `;
+  }
+
+  private _renderStats() {
+    const l = this._localize;
+    const name = this._config.name || this._friendlyName();
+    return html`
+      <ha-card>
+        <div class="inline-header">
+          <span class="avatar tile-avatar">
+            ${iconTemplate(this._config.icon, "mdi:chart-box-outline")}
+          </span>
+          <span class="tile-text">
+            <span class="tile-name">${name}</span>
+            <span class="tile-count">${l("stats_monthly")}</span>
+          </span>
+        </div>
+        <div class="inline-body">
+          <fi-stats-view
+            ?touch=${this._touchMode}
+            .stats=${this._stats}
+            .categories=${this._categories}
+            .localize=${l}
+            .language=${this._config.language || this._integration?.language || "en"}
+          ></fi-stats-view>
+        </div>
+      </ha-card>
     `;
   }
 
@@ -553,6 +628,7 @@ class FreezerInventoryCard extends LitElement {
         .isAdmin=${this.hass?.user?.is_admin ?? false}
         @fi-add=${() => this._openDialog("picker")}
         @fi-manage=${() => this._openDialog("manage")}
+        @fi-scan=${() => this._openDialog("scan")}
         @fi-select-item=${(e: CustomEvent<{ item: FreezerItem }>) => {
           this._selectedItem = e.detail.item;
           this._openDialog("remove");
@@ -611,6 +687,7 @@ class FreezerInventoryCard extends LitElement {
             .mode=${this._view === "amount" ? "amount" : "confirm"}
             .submitting=${this._busy}
             .errorText=${this._errorText}
+            .canMove=${this._freezers.length > 1}
             @fi-remove-all=${this._onRemoveAll}
             @fi-remove-half=${this._onRemoveHalf}
             @fi-enter-amount=${() => {
@@ -622,11 +699,58 @@ class FreezerInventoryCard extends LitElement {
               this._view = "edit";
               this._errorText = "";
             }}
+            @fi-move-item=${() => {
+              this._view = "move";
+              this._errorText = "";
+            }}
+            @fi-print-label=${() =>
+              this._selectedItem && printLabels([this._selectedItem], l)}
             @fi-remove-cancel=${() =>
               this._view === "amount"
                 ? ((this._view = "remove"), (this._errorText = ""))
                 : this._backToList()}
           ></fi-remove-dialog>
+        `;
+      case "move":
+        if (!this._selectedItem) return this._renderListView();
+        return html`
+          <h2 class="view-title">${l("move_where")}</h2>
+          ${this._errorText
+            ? html`<div class="error-banner">${this._errorText}</div>`
+            : nothing}
+          <div class="row-of-buttons">
+            ${this._freezers
+              .filter((freezer) => freezer.id !== this._freezerId)
+              .map(
+                (freezer) => html`
+                  <button
+                    class="btn btn-outline"
+                    ?disabled=${this._busy}
+                    @click=${() => this._onMoveTo(freezer)}
+                  >
+                    ${freezer.name}
+                  </button>
+                `
+              )}
+            <button
+              class="btn btn-quiet"
+              @click=${() => {
+                this._view = "remove";
+                this._errorText = "";
+              }}
+            >
+              ${l("cancel")}
+            </button>
+          </div>
+        `;
+      case "scan":
+        return html`
+          <fi-scan-view
+            ?touch=${this._touchMode}
+            .localize=${l}
+            @fi-scan-found=${this._onScanFound}
+            @fi-scan-cancel=${() => this._backToList()}
+          ></fi-scan-view>
         `;
       case "manage":
         return html`
@@ -636,6 +760,7 @@ class FreezerInventoryCard extends LitElement {
             .localize=${l}
             .categories=${this._categories}
             .products=${this._products}
+            @fi-print-all=${() => printLabels(this._items, l)}
             @fi-manage-close=${() => this._backToList()}
           ></fi-manage-view>
         `;

@@ -30,6 +30,10 @@ A custom Home Assistant integration + Lovelace card for tracking individual pack
 - 🗂️ **Preset management in the UI** — categories (colors, icons, storage times) and products (default & quick weights, ordering, hiding)
 - ⏰ **Old-item highlighting** — per-category recommended storage times with a global fallback
 - 🚪 **Auto-close** — optionally close the popup after a period of inactivity (ideal for kiosk tablets)
+- 🧊 **Multiple freezers** — managed in the integration options, items can be moved between freezers
+- 📊 **Statistics** — `display_mode: stats` card: current composition by category and monthly added/removed chart, plus a total-weight sensor for HA long-term graphs
+- 🏷️ **QR labels** — print labels (single or all at once) with a QR code, scan them with the camera to open the item instantly
+- 💾 **Export / import** — full data export and merge/replace import in the integration options
 - 💾 **Persistent storage** — data lives in `.storage/`, survives restarts, included in HA backups
 - 🌍 **Czech & English** — language selected in the integration, independent of the HA language
 - 🏪 **One-repo HACS install** — the card resource registers automatically
@@ -59,6 +63,10 @@ A custom Home Assistant integration + Lovelace card for tracking individual pack
 **Preset management** — categories and products:
 
 ![Category and product management](docs/images/manage-light.png)
+
+**Statistics mode** (`display_mode: stats`) — composition by category and monthly consumption:
+
+<img src="docs/images/stats-light.png" alt="Statistics card" width="460"/>
 
 ## Installation
 
@@ -102,7 +110,7 @@ type: custom:freezer-inventory-card
 freezer_id: main_freezer
 name: Freezer          # overrides the title
 icon: mdi:snowflake    # or an emoji, e.g. 🧊
-display_mode: popup    # popup | list
+display_mode: popup    # popup | list | stats
 touch_mode: true       # larger touch targets
 show_count: true
 show_weight: true

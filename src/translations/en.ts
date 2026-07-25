@@ -97,6 +97,31 @@ export const en: Record<string, string> = {
   move_up: "Move up",
   move_down: "Move down",
 
+  // Move between freezers
+  move: "MOVE",
+  move_where: "Move to which freezer?",
+  item_moved: "The item was moved to: {name}",
+
+  // Labels & scanning
+  print_label: "PRINT LABEL",
+  print_all_labels: "Print labels for all items",
+  scan_title: "Scan a label",
+  scan_hint: "Point the camera at the QR code on the package.",
+  scan_unsupported: "QR scanning is not supported in this browser.",
+  scan_camera_denied: "Could not start the camera. Check permissions.",
+  scan_not_found: "The scanned item is not in this freezer.",
+  scan_button: "Scan a label",
+
+  // Stats
+  stats_items: "Items",
+  stats_weight: "Total",
+  stats_avg_age: "Average age",
+  stats_oldest: "Oldest",
+  stats_by_category: "By category",
+  stats_monthly: "Monthly overview",
+  stats_added: "Added",
+  stats_removed: "Removed",
+
   // Months
   month_1: "January",
   month_2: "February",

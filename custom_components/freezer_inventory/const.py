@@ -73,3 +73,9 @@ ERR_PRODUCT_NOT_FOUND = "product_not_found"
 ERR_CATEGORY_NOT_FOUND = "category_not_found"
 ERR_DUPLICATE_ID = "duplicate_id"
 ERR_MISSING_PRODUCT = "missing_product"
+ERR_FREEZER_NOT_EMPTY = "freezer_not_empty"
+ERR_LAST_FREEZER = "last_freezer"
+ERR_INVALID_IMPORT = "invalid_import"
+
+# Consumption history retention (months)
+HISTORY_MONTHS = 24

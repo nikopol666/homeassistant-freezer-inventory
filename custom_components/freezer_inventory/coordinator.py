@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import uuid
+from datetime import timedelta
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -29,16 +30,19 @@ from .const import (
     DOMAIN,
     ERR_CATEGORY_NOT_FOUND,
     ERR_DUPLICATE_ID,
+    ERR_FREEZER_NOT_EMPTY,
     ERR_FREEZER_NOT_FOUND,
     ERR_INVALID_AMOUNT,
+    ERR_INVALID_IMPORT,
     ERR_INVALID_MONTH,
     ERR_INVALID_NAME,
     ERR_INVALID_QUANTITY,
     ERR_INVALID_WEIGHT,
     ERR_INVALID_YEAR,
+    ERR_INVALID_PIECES,
     ERR_ITEM_EXISTS,
     ERR_ITEM_NOT_FOUND,
-    ERR_INVALID_PIECES,
+    ERR_LAST_FREEZER,
     ERR_MISSING_PRODUCT,
     ERR_NO_PIECES,
     ERR_NO_WEIGHT,
@@ -48,6 +52,7 @@ from .const import (
     EVENT_ITEM_ADDED,
     EVENT_ITEM_REMOVED,
     EVENT_ITEM_UPDATED,
+    HISTORY_MONTHS,
     MAX_MONTH,
     MAX_QUANTITY,
     MIN_MONTH,
@@ -93,6 +98,7 @@ class FreezerInventoryCoordinator:
         self._categories: list[Category] = []
         self._products: list[Product] = []
         self._settings: dict[str, Any] = {}
+        self._history: list[dict[str, Any]] = []
 
     # ------------------------------------------------------------------
     # Config helpers
@@ -134,6 +140,9 @@ class FreezerInventoryCoordinator:
                 data.get("products") or [], Product.from_dict, "product"
             )
             self._settings = dict(data.get("settings") or {})
+            self._history = [
+                event for event in (data.get("history") or []) if isinstance(event, dict)
+            ]
 
             changed = False
 
@@ -141,12 +150,6 @@ class FreezerInventoryCoordinator:
                 self._freezers[DEFAULT_FREEZER_ID] = Freezer(
                     id=DEFAULT_FREEZER_ID, name=self._configured_freezer_name
                 )
-                changed = True
-
-            # Keep the main freezer name in sync with the config entry
-            main = self._freezers.get(DEFAULT_FREEZER_ID)
-            if main is not None and main.name != self._configured_freezer_name:
-                main.name = self._configured_freezer_name
                 changed = True
 
             if (
@@ -190,7 +193,51 @@ class FreezerInventoryCoordinator:
             "categories": [category.to_dict() for category in self._categories],
             "products": [product.to_dict() for product in self._products],
             "settings": self._settings,
+            "history": self._history,
         }
+
+    # ------------------------------------------------------------------
+    # Consumption history
+
+    def _trim_history(self) -> None:
+        cutoff = dt_util.now() - timedelta(days=HISTORY_MONTHS * 31)
+        cutoff_iso = cutoff.isoformat()
+        self._history = [
+            event for event in self._history if str(event.get("ts", "")) >= cutoff_iso
+        ]
+
+    def _log_history(
+        self,
+        event_type: str,
+        freezer_id: str,
+        item: FreezerItem,
+        *,
+        weight: int | None = None,
+        pieces: int | None = None,
+    ) -> None:
+        """Record an added/removed event for consumption statistics."""
+        self._history.append(
+            {
+                "ts": dt_util.now().isoformat(),
+                "type": event_type,
+                "freezer_id": freezer_id,
+                "item_id": item.id,
+                "product_name": item.product_name,
+                "category_id": item.category_id,
+                "weight": weight,
+                "pieces": pieces,
+            }
+        )
+        self._trim_history()
+
+    def _drop_removal_from_history(self, item_id: str) -> bool:
+        """Delete the latest 'removed' event for an item (undo support)."""
+        for index in range(len(self._history) - 1, -1, -1):
+            event = self._history[index]
+            if event.get("type") == "removed" and event.get("item_id") == item_id:
+                del self._history[index]
+                return True
+        return False
 
     async def _async_save(self) -> None:
         await self._store.async_save(self._to_dict())
@@ -431,6 +478,10 @@ class FreezerInventoryCoordinator:
                 for _ in range(quantity)
             ]
             freezer.items.extend(created)
+            for item in created:
+                self._log_history(
+                    "added", freezer_id, item, weight=item.weight, pieces=item.pieces
+                )
             await self._async_save()
 
         for item in created:
@@ -455,6 +506,9 @@ class FreezerInventoryCoordinator:
             freezer = self._get_freezer(freezer_id)
             item = self._get_item(freezer, item_id)
             freezer.items.remove(item)
+            self._log_history(
+                "removed", freezer_id, item, weight=item.weight, pieces=item.pieces
+            )
             await self._async_save()
 
         self._fire(
@@ -485,6 +539,13 @@ class FreezerInventoryCoordinator:
             if item.pieces is not None:
                 item.pieces = _round_half(item.pieces)
             item.updated_at = dt_util.now().isoformat()
+            self._log_history(
+                "removed",
+                freezer_id,
+                item,
+                weight=(old_weight - item.weight) if old_weight is not None else None,
+                pieces=(old_pieces - item.pieces) if old_pieces is not None else None,
+            )
             await self._async_save()
 
         self._fire(
@@ -565,12 +626,18 @@ class FreezerInventoryCoordinator:
             )
             if removed_entirely:
                 freezer.items.remove(item)
+                self._log_history(
+                    "removed", freezer_id, item, weight=old_weight, pieces=old_pieces
+                )
             else:
                 if amount is not None:
                     item.weight = (item.weight or 0) - amount
                 if pieces is not None:
                     item.pieces = (item.pieces or 0) - pieces
                 item.updated_at = dt_util.now().isoformat()
+                self._log_history(
+                    "removed", freezer_id, item, weight=amount, pieces=pieces
+                )
             await self._async_save()
 
         if removed_entirely:
@@ -732,6 +799,11 @@ class FreezerInventoryCoordinator:
                 raise InventoryError(ERR_ITEM_EXISTS, {"item_id": item.id})
             item.updated_at = dt_util.now().isoformat()
             freezer.items.append(item)
+            # Undo of a removal: erase the removal from consumption history
+            if not self._drop_removal_from_history(item.id):
+                self._log_history(
+                    "added", freezer_id, item, weight=item.weight, pieces=item.pieces
+                )
             await self._async_save()
 
         self._fire(
@@ -930,3 +1002,210 @@ class FreezerInventoryCoordinator:
             self._settings["defaults_seeded"] = True
             await self._async_save()
         self._notify_catalog()
+
+    # ------------------------------------------------------------------
+    # Freezer management
+
+    async def async_add_freezer(
+        self, name: str, *, icon: str = "mdi:snowflake"
+    ) -> Freezer:
+        async with self._lock:
+            name = self._validate_name(name)
+            freezer = Freezer(
+                id=self._unique_id(name, set(self._freezers)),
+                name=name,
+                icon=icon or "mdi:snowflake",
+            )
+            self._freezers[freezer.id] = freezer
+            await self._async_save()
+        self._notify_freezers()
+        return freezer
+
+    async def async_update_freezer(self, freezer_id: str, **changes: Any) -> Freezer:
+        async with self._lock:
+            freezer = self._get_freezer(freezer_id)
+            if "name" in changes:
+                freezer.name = self._validate_name(changes["name"])
+            if "icon" in changes and changes["icon"]:
+                freezer.icon = str(changes["icon"])
+            if "enabled" in changes:
+                freezer.enabled = bool(changes["enabled"])
+            await self._async_save()
+        self._notify_freezers()
+        return freezer
+
+    async def async_delete_freezer(self, freezer_id: str) -> None:
+        """Delete an empty freezer (the last freezer cannot be deleted)."""
+        async with self._lock:
+            freezer = self._get_freezer(freezer_id)
+            if freezer.items:
+                raise InventoryError(ERR_FREEZER_NOT_EMPTY, {"name": freezer.name})
+            if len(self._freezers) <= 1:
+                raise InventoryError(ERR_LAST_FREEZER)
+            del self._freezers[freezer_id]
+            await self._async_save()
+        self._notify_freezers()
+
+    # ------------------------------------------------------------------
+    # Export / import
+
+    @callback
+    def export_data(self) -> dict[str, Any]:
+        """Full data export (spec §26)."""
+        return {
+            "version": 1,
+            "exported_at": dt_util.now().isoformat(),
+            "categories": [category.to_dict() for category in self._categories],
+            "products": [product.to_dict() for product in self._products],
+            "freezers": [freezer.to_dict() for freezer in self._freezers.values()],
+            "history": list(self._history),
+        }
+
+    async def async_import_data(self, data: dict[str, Any], mode: str) -> None:
+        """Import an export file: 'merge' upserts, 'replace' overwrites."""
+        try:
+            categories = [
+                Category.from_dict(raw) for raw in data.get("categories") or []
+            ]
+            products = [Product.from_dict(raw) for raw in data.get("products") or []]
+            freezers = [
+                Freezer.from_dict(raw.get("id") or f"freezer_{index}", raw)
+                for index, raw in enumerate(data.get("freezers") or [], start=1)
+            ]
+            history = [
+                event for event in (data.get("history") or []) if isinstance(event, dict)
+            ]
+        except (KeyError, TypeError, ValueError, AttributeError) as err:
+            raise InventoryError(ERR_INVALID_IMPORT) from err
+
+        if not freezers and not categories and not products:
+            raise InventoryError(ERR_INVALID_IMPORT)
+
+        async with self._lock:
+            if mode == "replace":
+                self._categories = categories
+                self._products = products
+                self._freezers = {freezer.id: freezer for freezer in freezers}
+                self._history = history
+                self._trim_history()
+            else:  # merge
+                by_id = {category.id: category for category in self._categories}
+                for category in categories:
+                    by_id[category.id] = category
+                self._categories = list(by_id.values())
+
+                products_by_id = {product.id: product for product in self._products}
+                for product in products:
+                    products_by_id[product.id] = product
+                self._products = list(products_by_id.values())
+
+                for freezer in freezers:
+                    existing = self._freezers.get(freezer.id)
+                    if existing is None:
+                        self._freezers[freezer.id] = freezer
+                    else:
+                        known_ids = {item.id for item in existing.items}
+                        existing.items.extend(
+                            item for item in freezer.items if item.id not in known_ids
+                        )
+            await self._async_save()
+
+        self._notify_catalog()
+        self._notify_freezers()
+        for freezer_id in self._freezers:
+            self._notify_items(freezer_id)
+
+    # ------------------------------------------------------------------
+    # Statistics
+
+    @callback
+    def stats(self, freezer_id: str | None = None) -> dict[str, Any]:
+        """Current composition + monthly consumption from the history log."""
+        if freezer_id is not None:
+            freezers = [self._get_freezer(freezer_id)]
+        else:
+            freezers = list(self._freezers.values())
+        items = [item for freezer in freezers for item in freezer.items]
+        now = dt_util.now()
+
+        by_category: dict[str, dict[str, Any]] = {}
+        for item in items:
+            key = item.category_id or "_none"
+            entry = by_category.setdefault(
+                key,
+                {
+                    "category_id": item.category_id,
+                    "category_name": item.category_name,
+                    "count": 0,
+                    "weight": 0,
+                    "pieces": 0,
+                },
+            )
+            entry["count"] += 1
+            entry["weight"] += item.weight or 0
+            entry["pieces"] += item.pieces or 0
+
+        ages = [
+            (now.year - item.year) * 12 + (now.month - item.month) for item in items
+        ]
+        oldest = min(items, key=lambda i: i.sort_key) if items else None
+        current = {
+            "item_count": len(items),
+            "total_weight": sum(item.weight or 0 for item in items),
+            "total_pieces": sum(item.pieces or 0 for item in items),
+            "items_without_weight": sum(1 for item in items if item.weight is None),
+            "avg_age_months": round(sum(ages) / len(ages), 1) if ages else None,
+            "oldest_item": (
+                {
+                    "name": oldest.product_name,
+                    "month": oldest.month,
+                    "year": oldest.year,
+                    "weight": oldest.weight,
+                }
+                if oldest
+                else None
+            ),
+            "categories": sorted(
+                by_category.values(), key=lambda c: (-c["weight"], -c["count"])
+            ),
+        }
+
+        monthly: dict[str, dict[str, Any]] = {}
+        for event in self._history:
+            if freezer_id is not None and event.get("freezer_id") != freezer_id:
+                continue
+            month = str(event.get("ts", ""))[:7]
+            if len(month) != 7:
+                continue
+            bucket = monthly.setdefault(
+                month,
+                {
+                    "month": month,
+                    "added_count": 0,
+                    "added_weight": 0,
+                    "added_pieces": 0,
+                    "removed_count": 0,
+                    "removed_weight": 0,
+                    "removed_pieces": 0,
+                    "removed_by_category": {},
+                },
+            )
+            weight = event.get("weight") or 0
+            pieces = event.get("pieces") or 0
+            if event.get("type") == "added":
+                bucket["added_count"] += 1
+                bucket["added_weight"] += weight
+                bucket["added_pieces"] += pieces
+            elif event.get("type") == "removed":
+                bucket["removed_count"] += 1
+                bucket["removed_weight"] += weight
+                bucket["removed_pieces"] += pieces
+                category = event.get("category_id") or "_none"
+                bucket["removed_by_category"][category] = (
+                    bucket["removed_by_category"].get(category, 0) + weight
+                )
+
+        return {
+            "current": current,
+            "monthly": sorted(monthly.values(), key=lambda b: b["month"]),
+        }

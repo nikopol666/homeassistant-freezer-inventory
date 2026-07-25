@@ -17,6 +17,7 @@ def empty_data() -> dict[str, Any]:
         "categories": [],
         "products": [],
         "settings": {},
+        "history": [],
     }
 
 

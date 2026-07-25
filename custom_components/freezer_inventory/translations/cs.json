@@ -22,16 +22,63 @@
   "options": {
     "step": {
       "init": {
-        "title": "Možnosti Freezer Inventory",
+        "menu_options": {
+          "settings": "Nastavení",
+          "add_freezer": "Přidat mrazák",
+          "edit_freezer": "Upravit nebo smazat mrazák",
+          "export_data": "Exportovat data",
+          "import_data": "Importovat data"
+        }
+      },
+      "settings": {
+        "title": "Nastavení",
         "data": {
           "language": "Jazyk rozhraní",
-          "freezer_name": "Název mrazáku",
           "old_months": "Zvýraznit položky starší než (měsíců)"
+        }
+      },
+      "add_freezer": {
+        "title": "Přidat mrazák",
+        "data": {
+          "name": "Název mrazáku",
+          "icon": "Ikona (emoji nebo mdi:...)"
+        }
+      },
+      "edit_freezer": {
+        "title": "Vyberte mrazák",
+        "data": {
+          "freezer": "Mrazák"
+        }
+      },
+      "edit_freezer_details": {
+        "title": "Upravit {name}",
+        "data": {
+          "name": "Název mrazáku",
+          "icon": "Ikona (emoji nebo mdi:...)",
+          "delete": "Smazat tento mrazák (musí být prázdný)"
+        }
+      },
+      "export_data": {
+        "title": "Export dokončen",
+        "description": "Data byla exportována do:\n\n`{path}`\n\nSoubor obsahuje kategorie, produkty, mrazáky se všemi položkami a historii spotřeby."
+      },
+      "import_data": {
+        "title": "Import dat",
+        "data": {
+          "mode": "Režim importu",
+          "data": "Exportovaná JSON data (vložte obsah souboru)"
         }
       }
     },
     "error": {
-      "invalid_name": "Název nesmí být prázdný."
+      "invalid_name": "Název nesmí být prázdný.",
+      "freezer_not_empty": "Mrazák není prázdný, nelze ho smazat.",
+      "last_freezer": "Poslední mrazák nelze smazat.",
+      "invalid_json": "Toto není platný JSON.",
+      "invalid_import": "Data nejsou platný export Freezer Inventory."
+    },
+    "abort": {
+      "not_loaded": "Integrace není načtená."
     }
   },
   "selector": {
@@ -45,6 +92,12 @@
       "options": {
         "g": "Gramy (g)",
         "kg": "Kilogramy (kg)"
+      }
+    },
+    "import_mode": {
+      "options": {
+        "merge": "Sloučit se současnými daty",
+        "replace": "Nahradit současná data"
       }
     }
   },
@@ -298,6 +351,15 @@
     },
     "invalid_pieces": {
       "message": "Počet kusů není platný."
+    },
+    "freezer_not_empty": {
+      "message": "Mrazák \"{name}\" není prázdný, nelze ho smazat."
+    },
+    "last_freezer": {
+      "message": "Poslední mrazák nelze smazat."
+    },
+    "invalid_import": {
+      "message": "Data nejsou platný export Freezer Inventory."
     }
   }
 }

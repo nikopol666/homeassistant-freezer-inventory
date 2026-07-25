@@ -30,6 +30,10 @@ Vlastní integrace a Lovelace karta pro Home Assistant určená k evidenci jedno
 - 🗂️ **Správa předvoleb v UI** — kategorie (barvy, ikony, doby skladování) i produkty (výchozí a rychlé hmotnosti, pořadí, skrývání)
 - ⏰ **Zvýraznění starých položek** — podle doporučené doby skladování kategorie, s globálním prahem jako zálohou
 - 🚪 **Automatické zavření** — popup se volitelně zavře po nastavené době nečinnosti (ideální pro kiosek)
+- 🧊 **Více mrazáků** — správa v možnostech integrace, položky lze mezi mrazáky přesouvat
+- 📊 **Statistiky** — karta `display_mode: stats`: aktuální složení podle kategorií a měsíční graf přidáno/vyjmuto, plus senzor celkové hmotnosti pro dlouhodobé grafy v HA
+- 🏷️ **QR štítky** — tisk štítků (jednotlivě i hromadně) s QR kódem, naskenováním kamerou se položka rovnou otevře
+- 💾 **Export / import** — kompletní export dat a import (sloučit/nahradit) v možnostech integrace
 - 💾 **Perzistentní úložiště** — data v `.storage/`, přežijí restart a jsou součástí záloh HA
 - 🌍 **Čeština a angličtina** — jazyk se volí v integraci, nezávisle na jazyku Home Assistantu
 - 🏪 **Instalace přes HACS z jednoho repozitáře** — karta se do Lovelace registruje automaticky
@@ -59,6 +63,10 @@ Vlastní integrace a Lovelace karta pro Home Assistant určená k evidenci jedno
 **Správa předvoleb** — kategorie a produkty:
 
 ![Správa kategorií a produktů](docs/images/manage-light.png)
+
+**Režim statistik** (`display_mode: stats`) — složení podle kategorií a měsíční spotřeba:
+
+<img src="docs/images/stats-light.png" alt="Karta statistik" width="460"/>
 
 ## Instalace
 
@@ -102,7 +110,7 @@ type: custom:freezer-inventory-card
 freezer_id: main_freezer
 name: Mrazák           # přepíše název
 icon: mdi:snowflake    # nebo emoji, např. 🧊
-display_mode: popup    # popup = dlaždice s popupem, list = přímý seznam
+display_mode: popup    # popup | list | stats (statistiky)
 touch_mode: true       # větší dotykové prvky
 show_count: true
 show_weight: true

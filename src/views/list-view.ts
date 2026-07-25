@@ -5,6 +5,7 @@ import type { LocalizeFunc } from "../localize";
 import { ageInMonths, formatDate } from "../localize";
 import { avatarStyle, fireEvent, iconTemplate } from "../ha-helpers";
 import { sharedStyles } from "../styles";
+import { scanSupported } from "./scan-view";
 
 const UNCATEGORIZED = "__none__";
 
@@ -118,6 +119,18 @@ export class FiListView extends LitElement {
         <button class="btn btn-primary" @click=${() => fireEvent(this, "fi-add")}>
           ${this.localize("add")}
         </button>
+        ${scanSupported()
+          ? html`
+              <button
+                class="btn btn-quiet manage-btn"
+                title=${this.localize("scan_button")}
+                aria-label=${this.localize("scan_button")}
+                @click=${() => fireEvent(this, "fi-scan")}
+              >
+                <ha-icon icon="mdi:qrcode-scan"></ha-icon>
+              </button>
+            `
+          : nothing}
         ${this.isAdmin
           ? html`
               <button

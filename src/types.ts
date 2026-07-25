@@ -85,7 +85,7 @@ export interface CardConfig {
   freezer_id?: string;
   name?: string;
   icon?: string;
-  display_mode?: "popup" | "list";
+  display_mode?: "popup" | "list" | "stats";
   touch_mode?: boolean;
   show_count?: boolean;
   show_weight?: boolean;
@@ -109,7 +109,46 @@ export type ViewName =
   | "edit"
   | "remove"
   | "amount"
-  | "manage";
+  | "manage"
+  | "move"
+  | "scan";
+
+export interface StatsCategory {
+  category_id: string | null;
+  category_name: string | null;
+  count: number;
+  weight: number;
+  pieces: number;
+}
+
+export interface StatsMonth {
+  month: string; // YYYY-MM
+  added_count: number;
+  added_weight: number;
+  added_pieces: number;
+  removed_count: number;
+  removed_weight: number;
+  removed_pieces: number;
+  removed_by_category: Record<string, number>;
+}
+
+export interface Stats {
+  current: {
+    item_count: number;
+    total_weight: number;
+    total_pieces: number;
+    items_without_weight: number;
+    avg_age_months: number | null;
+    oldest_item: {
+      name: string;
+      month: number;
+      year: number;
+      weight: number | null;
+    } | null;
+    categories: StatsCategory[];
+  };
+  monthly: StatsMonth[];
+}
 
 export interface UndoState {
   kind: "remove" | "weight";

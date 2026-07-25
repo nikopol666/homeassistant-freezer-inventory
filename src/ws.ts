@@ -5,6 +5,7 @@ import type {
   HomeAssistant,
   IntegrationConfig,
   Product,
+  Stats,
   UpdatePayload,
 } from "./types";
 
@@ -50,6 +51,29 @@ export async function fetchFreezers(
     type: `${DOMAIN}/get_freezers`,
   });
   return result.freezers;
+}
+
+export async function fetchStats(
+  hass: HomeAssistant,
+  freezerId?: string
+): Promise<Stats> {
+  return hass.callWS<Stats>({
+    type: `${DOMAIN}/get_stats`,
+    ...(freezerId ? { freezer_id: freezerId } : {}),
+  });
+}
+
+export async function moveItem(
+  hass: HomeAssistant,
+  itemId: string,
+  sourceFreezerId: string,
+  targetFreezerId: string
+): Promise<void> {
+  await hass.callService(DOMAIN, "move_item", {
+    item_id: itemId,
+    source_freezer_id: sourceFreezerId,
+    target_freezer_id: targetFreezerId,
+  });
 }
 
 export function subscribeUpdates(

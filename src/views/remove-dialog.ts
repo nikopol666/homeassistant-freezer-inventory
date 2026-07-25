@@ -1,10 +1,12 @@
 import { LitElement, html, css, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
+import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import type { FreezerItem } from "../types";
 import type { LocalizeFunc } from "../localize";
 import { itemLabel } from "../localize";
 import { fireEvent } from "../ha-helpers";
 import { sharedStyles } from "../styles";
+import { qrSvg } from "../labels";
 
 /** Confirm view for removing an item: whole / half / amount / edit / cancel. */
 export class FiRemoveDialog extends LitElement {
@@ -14,6 +16,8 @@ export class FiRemoveDialog extends LitElement {
   @property({ attribute: false }) errorText = "";
   /** "confirm" = button list, "amount" = numeric entry. */
   @property({ attribute: false }) mode: "confirm" | "amount" = "confirm";
+  /** Show the MOVE button (more than one freezer exists). */
+  @property({ attribute: false }) canMove = false;
 
   @state() private _amount = "";
   @state() private _pieces = "";
@@ -96,9 +100,12 @@ export class FiRemoveDialog extends LitElement {
     const hasPieces = this.item.pieces != null;
     const canHalve = hasWeight || (hasPieces && (this.item.pieces ?? 0) > 1);
     return html`
-      <h2 class="view-title question">
-        ${l("remove_question", { label: itemLabel(this.item, l) })}
-      </h2>
+      <div class="title-row">
+        <h2 class="view-title question">
+          ${l("remove_question", { label: itemLabel(this.item, l) })}
+        </h2>
+        <div class="qr" title=${this.item.id}>${unsafeHTML(qrSvg(this.item, 3))}</div>
+      </div>
       ${this.item.note
         ? html`
             <p class="note">
@@ -143,6 +150,22 @@ export class FiRemoveDialog extends LitElement {
           @click=${() => fireEvent(this, "fi-edit-item")}
         >
           ${l("edit")}
+        </button>
+        ${this.canMove
+          ? html`
+              <button
+                class="btn btn-outline"
+                @click=${() => fireEvent(this, "fi-move-item")}
+              >
+                ${l("move")}
+              </button>
+            `
+          : nothing}
+        <button
+          class="btn btn-outline"
+          @click=${() => fireEvent(this, "fi-print-label")}
+        >
+          ${l("print_label")}
         </button>
         <button
           class="btn btn-quiet"
@@ -269,6 +292,33 @@ export class FiRemoveDialog extends LitElement {
     css`
       .question {
         line-height: 1.35;
+      }
+
+      .title-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+      }
+
+      .title-row .view-title {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .qr {
+        flex: none;
+        width: 84px;
+        height: 84px;
+        padding: 6px;
+        background: #fff;
+        border-radius: 8px;
+      }
+
+      .qr svg {
+        width: 100%;
+        height: 100%;
+        display: block;
       }
 
       .note {

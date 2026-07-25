@@ -22,16 +22,63 @@
   "options": {
     "step": {
       "init": {
-        "title": "Freezer Inventory options",
+        "menu_options": {
+          "settings": "Settings",
+          "add_freezer": "Add a freezer",
+          "edit_freezer": "Edit or delete a freezer",
+          "export_data": "Export data",
+          "import_data": "Import data"
+        }
+      },
+      "settings": {
+        "title": "Settings",
         "data": {
           "language": "Interface language",
-          "freezer_name": "Freezer name",
           "old_months": "Highlight items older than (months)"
+        }
+      },
+      "add_freezer": {
+        "title": "Add a freezer",
+        "data": {
+          "name": "Freezer name",
+          "icon": "Icon (emoji or mdi:...)"
+        }
+      },
+      "edit_freezer": {
+        "title": "Choose a freezer",
+        "data": {
+          "freezer": "Freezer"
+        }
+      },
+      "edit_freezer_details": {
+        "title": "Edit {name}",
+        "data": {
+          "name": "Freezer name",
+          "icon": "Icon (emoji or mdi:...)",
+          "delete": "Delete this freezer (must be empty)"
+        }
+      },
+      "export_data": {
+        "title": "Export complete",
+        "description": "The data was exported to:\n\n`{path}`\n\nThe file contains categories, products, freezers with all items, and the consumption history."
+      },
+      "import_data": {
+        "title": "Import data",
+        "data": {
+          "mode": "Import mode",
+          "data": "Exported JSON data (paste the file contents)"
         }
       }
     },
     "error": {
-      "invalid_name": "The name must not be empty."
+      "invalid_name": "The name must not be empty.",
+      "freezer_not_empty": "The freezer is not empty and cannot be deleted.",
+      "last_freezer": "The last freezer cannot be deleted.",
+      "invalid_json": "This is not valid JSON.",
+      "invalid_import": "The data is not a valid Freezer Inventory export."
+    },
+    "abort": {
+      "not_loaded": "The integration is not loaded."
     }
   },
   "selector": {
@@ -45,6 +92,12 @@
       "options": {
         "g": "Grams (g)",
         "kg": "Kilograms (kg)"
+      }
+    },
+    "import_mode": {
+      "options": {
+        "merge": "Merge with current data",
+        "replace": "Replace current data"
       }
     }
   },
@@ -298,6 +351,15 @@
     },
     "invalid_pieces": {
       "message": "The number of pieces is not valid."
+    },
+    "freezer_not_empty": {
+      "message": "Freezer \"{name}\" is not empty and cannot be deleted."
+    },
+    "last_freezer": {
+      "message": "The last freezer cannot be deleted."
+    },
+    "invalid_import": {
+      "message": "The data is not a valid Freezer Inventory export."
     }
   }
 }

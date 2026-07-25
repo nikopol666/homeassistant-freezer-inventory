@@ -1,6 +1,6 @@
 {
   "name": "freezer-inventory-card",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Lovelace card for the Freezer Inventory Home Assistant integration",
   "license": "MIT",
   "type": "module",
@@ -9,12 +9,14 @@
     "watch": "rollup -c -w"
   },
   "dependencies": {
-    "lit": "^3.2.0"
+    "lit": "^3.2.0",
+    "qrcode-generator": "^2.0.4"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^15.3.0",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^12.1.0",
+    "@types/qrcode-generator": "^0.0.16",
     "rollup": "^4.24.0",
     "tslib": "^2.7.0",
     "typescript": "^5.6.0"

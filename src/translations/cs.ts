@@ -96,6 +96,31 @@ export const cs: Record<string, string> = {
   move_up: "Posunout nahoru",
   move_down: "Posunout dolů",
 
+  // Move between freezers
+  move: "PŘESUNOUT",
+  move_where: "Kam přesunout?",
+  item_moved: "Položka byla přesunuta do: {name}",
+
+  // Labels & scanning
+  print_label: "VYTISKNOUT ŠTÍTEK",
+  print_all_labels: "Tisk štítků všech položek",
+  scan_title: "Naskenujte štítek",
+  scan_hint: "Namiřte kameru na QR kód na balíčku.",
+  scan_unsupported: "Skenování QR kódů není v tomto prohlížeči podporováno.",
+  scan_camera_denied: "Kameru se nepodařilo spustit. Zkontrolujte oprávnění.",
+  scan_not_found: "Naskenovaná položka v tomto mrazáku není.",
+  scan_button: "Naskenovat štítek",
+
+  // Stats
+  stats_items: "Položek",
+  stats_weight: "Celkem",
+  stats_avg_age: "Průměrné stáří",
+  stats_oldest: "Nejstarší",
+  stats_by_category: "Podle kategorií",
+  stats_monthly: "Měsíční přehled",
+  stats_added: "Přidáno",
+  stats_removed: "Vyjmuto",
+
   // Months
   month_1: "Leden",
   month_2: "Únor",

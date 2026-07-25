@@ -46,6 +46,7 @@ def async_register_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_get_categories)
     websocket_api.async_register_command(hass, ws_get_freezers)
     websocket_api.async_register_command(hass, ws_get_config)
+    websocket_api.async_register_command(hass, ws_get_stats)
     websocket_api.async_register_command(hass, ws_subscribe_updates)
     websocket_api.async_register_command(hass, ws_restore_item)
     websocket_api.async_register_command(hass, ws_product_create)
@@ -126,6 +127,24 @@ def ws_get_config(
             "old_months": entry.options.get(CONF_OLD_MONTHS, DEFAULT_OLD_MONTHS),
         },
     )
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/get_stats",
+        vol.Optional("freezer_id"): str,
+    }
+)
+@callback
+def ws_get_stats(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    if (coordinator := _require_coordinator(hass, connection, msg["id"])) is None:
+        return
+    try:
+        connection.send_result(msg["id"], coordinator.stats(msg.get("freezer_id")))
+    except InventoryError as err:
+        connection.send_error(msg["id"], err.code, str(err))
 
 
 # ----------------------------------------------------------------------

@@ -221,6 +221,12 @@ export class FiManageView extends LitElement {
         </button>
         <button
           class="btn btn-outline"
+          @click=${() => fireEvent(this, "fi-print-all")}
+        >
+          ${l("print_all_labels")}
+        </button>
+        <button
+          class="btn btn-outline"
           @click=${() =>
             (this._confirm = {
               text: l("restore_defaults_confirm"),

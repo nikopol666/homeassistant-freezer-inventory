@@ -12,6 +12,7 @@ const TEXTS: Record<string, Record<string, string>> = {
     display_mode: "Režim zobrazení",
     popup: "Dlaždice s popupem",
     list: "Přímý seznam",
+    stats: "Statistiky",
     touch_mode: "Tabletový režim (větší prvky)",
     show_count: "Zobrazit počet položek",
     show_weight: "Zobrazovat hmotnost",
@@ -31,6 +32,7 @@ const TEXTS: Record<string, Record<string, string>> = {
     display_mode: "Display mode",
     popup: "Tile with popup",
     list: "Inline list",
+    stats: "Statistics",
     touch_mode: "Tablet mode (larger elements)",
     show_count: "Show item count",
     show_weight: "Show weight",
@@ -148,7 +150,8 @@ class FreezerInventoryCardEditor extends LitElement {
               this._update({
                 display_mode: (e.target as HTMLSelectElement).value as
                   | "popup"
-                  | "list",
+                  | "list"
+                  | "stats",
               })}
           >
             <option value="popup" ?selected=${(c.display_mode ?? "popup") === "popup"}>
@@ -156,6 +159,9 @@ class FreezerInventoryCardEditor extends LitElement {
             </option>
             <option value="list" ?selected=${c.display_mode === "list"}>
               ${t.list}
+            </option>
+            <option value="stats" ?selected=${c.display_mode === "stats"}>
+              ${t.stats}
             </option>
           </select>
         </div>
