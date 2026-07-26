@@ -126,10 +126,14 @@ old_months: 6          # highlight threshold override
 language: en           # cs | en (defaults to the integration language)
 auto_close: 60         # close the popup after N seconds of inactivity
 label_format: a4       # a4 | 50x30 | 40x30 | 40x12 | 30x15 | any "WxH" in mm
-label_action: print    # print (system dialog) | image (PNG for label-printer apps)
+label_action: print    # print (system dialog) | image (PNG) | niimbot (direct print)
+label_printer: ""      # niimbot only: device_id (only needed with multiple printers)
+label_font: ""         # niimbot only: TTF name from www/fonts (for special glyphs)
 ```
 
 ### Label printers (Niimbot & co.)
+
+- `label_action: niimbot` prints **directly from Home Assistant** via the [hass-niimbot](https://github.com/eigger/hass-niimbot) integration (Bluetooth): the card calls `niimbot.print` with a declarative payload (texts + QR), so the label is rendered crisply by the printer itself. With a single printer nothing else is needed; with several, set `label_printer` to the device id. If Czech characters render wrong, drop a TTF into `www/fonts/` and set `label_font`.
 
 - `label_format: 50x30` (or any `WxH` in mm) prints **one label per page** in exactly that size — for label printers with a print driver (Brother, Dymo…).
 - QR **scanning** uses the native BarcodeDetector where available and a bundled decoder everywhere else — it works in Chrome, Firefox, Safari and the companion app alike (HTTPS required for the camera)

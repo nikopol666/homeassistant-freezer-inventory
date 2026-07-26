@@ -1,4 +1,4 @@
-import { LitElement, html, css } from "lit";
+import { LitElement, html, css, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
 import type { CardConfig, FreezerInfo, HomeAssistant } from "./types";
 import { fireEvent, loadHaComponents } from "./ha-helpers";
@@ -28,7 +28,10 @@ const TEXTS: Record<string, Record<string, string>> = {
     label_a4: "Arch A4 (88×36 mm)",
     label_action: "Tisk štítků",
     label_print: "Tisková fronta (běžná tiskárna / driver)",
-    label_image: "Obrázek PNG pro aplikaci tiskárny (Niimbot…)",
+    label_image: "Obrázek PNG pro aplikaci tiskárny",
+    label_niimbot: "Přímo přes Niimbot integraci (BLE)",
+    label_printer: "Niimbot device_id (nepovinné, jen při více tiskárnách)",
+    label_font: "Font štítku (nepovinné, TTF z www/fonts)",
   },
   en: {
     freezer_id: "Freezer",
@@ -53,7 +56,10 @@ const TEXTS: Record<string, Record<string, string>> = {
     label_a4: "A4 sheet (88×36 mm)",
     label_action: "Label printing",
     label_print: "Print queue (regular printer / driver)",
-    label_image: "PNG image for a label-printer app (Niimbot…)",
+    label_image: "PNG image for a label-printer app",
+    label_niimbot: "Directly via the Niimbot integration (BLE)",
+    label_printer: "Niimbot device_id (optional, only with multiple printers)",
+    label_font: "Label font (optional, TTF from www/fonts)",
   },
 };
 
@@ -266,18 +272,57 @@ class FreezerInventoryCardEditor extends LitElement {
             @change=${(e: Event) => {
               const value = (e.target as HTMLSelectElement).value;
               this._update({
-                label_action: value === "image" ? "image" : undefined,
+                label_action:
+                  value === "image" || value === "niimbot"
+                    ? (value as "image" | "niimbot")
+                    : undefined,
               });
             }}
           >
-            <option value="print" ?selected=${c.label_action !== "image"}>
+            <option
+              value="print"
+              ?selected=${!c.label_action || c.label_action === "print"}
+            >
               ${t.label_print}
             </option>
             <option value="image" ?selected=${c.label_action === "image"}>
               ${t.label_image}
             </option>
+            <option value="niimbot" ?selected=${c.label_action === "niimbot"}>
+              ${t.label_niimbot}
+            </option>
           </select>
         </div>
+
+        ${c.label_action === "niimbot"
+          ? html`
+              <div class="field">
+                <label>${t.label_printer}</label>
+                <input
+                  type="text"
+                  .value=${c.label_printer ?? ""}
+                  @input=${(e: InputEvent) =>
+                    this._update({
+                      label_printer:
+                        (e.target as HTMLInputElement).value.trim() || undefined,
+                    })}
+                />
+              </div>
+              <div class="field">
+                <label>${t.label_font}</label>
+                <input
+                  type="text"
+                  placeholder="ppb.ttf"
+                  .value=${c.label_font ?? ""}
+                  @input=${(e: InputEvent) =>
+                    this._update({
+                      label_font:
+                        (e.target as HTMLInputElement).value.trim() || undefined,
+                    })}
+                />
+              </div>
+            `
+          : nothing}
 
         <div class="field">
           <label>${t.language}</label>

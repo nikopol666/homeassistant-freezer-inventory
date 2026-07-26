@@ -31,13 +31,14 @@ import "./views/scan-view";
 import "./views/stats-view";
 import type { ItemFormResult } from "./views/item-form";
 import {
+  niimbotPrintData,
   parseLabelFormat,
   printLabels,
   printUnsupported,
   shareLabelImages,
 } from "./labels";
 
-const CARD_VERSION = "1.1.2";
+const CARD_VERSION = "1.2.0";
 const DEFAULT_FREEZER = "main_freezer";
 const UNDO_TIMEOUT = 6000;
 
@@ -514,6 +515,34 @@ class FreezerInventoryCard extends LitElement {
   private async _print(items: FreezerItem[]) {
     const l = this._localize;
     const format = parseLabelFormat(this._config.label_format);
+    if (this._config.label_action === "niimbot") {
+      // Direct print through the hass-niimbot integration
+      if (!this.hass) return;
+      this._busy = true;
+      try {
+        for (const item of items) {
+          const data = niimbotPrintData(item, l, format, this._config.label_font);
+          await this.hass.callService(
+            "niimbot",
+            "print",
+            data as unknown as Record<string, unknown>,
+            this._config.label_printer
+              ? { device_id: this._config.label_printer }
+              : undefined
+          );
+        }
+        this._showToast(
+          items.length > 1
+            ? l("labels_sent", { count: items.length })
+            : l("label_sent")
+        );
+      } catch (err) {
+        this._showToast(ws.errorMessage(err, l("err_generic")));
+      } finally {
+        this._busy = false;
+      }
+      return;
+    }
     if (this._config.label_action === "image") {
       // PNG for label-printer apps (Niimbot & co.) via share sheet/download
       try {

@@ -104,6 +104,8 @@ export const en: Record<string, string> = {
 
   // Labels & scanning
   print_label: "PRINT LABEL",
+  label_sent: "Label sent to the Niimbot printer.",
+  labels_sent: "{count} labels sent to the Niimbot printer.",
   label_downloaded:
     "Label saved as a PNG image. Open it in your label printer app (e.g. Niimbot) and print.",
   print_unsupported_app:

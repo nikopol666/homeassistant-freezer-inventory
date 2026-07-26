@@ -347,3 +347,141 @@ declare global {
     canShare?: (data: { files: File[] }) => boolean;
   }
 }
+
+// ---------------------------------------------------------------------
+// Direct printing via the hass-niimbot integration (service niimbot.print):
+// the label is described as imagespec elements (text + qrcode) and rendered
+// by the printer integration itself — crisp output, no PNG scaling.
+
+export interface NiimbotPrintData {
+  payload: Record<string, unknown>[];
+  width: number;
+  height: number;
+}
+
+/** Split a name into at most two lines that fit maxChars per line. */
+function wrapName(name: string, maxChars: number): string[] {
+  if (name.length <= maxChars) return [name];
+  const words = name.split(/\s+/);
+  if (words.length === 1) return [name];
+  let first = words[0];
+  let index = 1;
+  while (
+    index < words.length &&
+    `${first} ${words[index]}`.length <= maxChars
+  ) {
+    first = `${first} ${words[index]}`;
+    index += 1;
+  }
+  const rest = words.slice(index).join(" ");
+  return rest ? [first, rest] : [first];
+}
+
+/**
+ * Build the niimbot.print service data for one item. Layout follows the
+ * proven manual recipe: texts on the left, QR filling the right side.
+ */
+export function niimbotPrintData(
+  item: FreezerItem,
+  l: LocalizeFunc,
+  format: LabelFormat,
+  font?: string
+): NiimbotPrintData {
+  const widthMm = format.width ?? 50;
+  const heightMm = format.height ?? 30;
+  const width = widthMm * PX_PER_MM;
+  const height = heightMm * PX_PER_MM;
+  const thin = heightMm <= 20;
+
+  const pad = thin ? 6 : 12;
+
+  // QR sizing in the module-based form proven with hass-niimbot
+  // (boxsize + eclevel: 2); the renderer adds a default 4-module border.
+  const qr = qrcode(0, "H");
+  qr.addData(qrPayload(item));
+  qr.make();
+  const modulesWithBorder = qr.getModuleCount() + 8;
+  const qrBudget = Math.min(height - 2 * (thin ? 4 : 8), Math.round(width * 0.5));
+  const boxsize = Math.max(2, Math.floor(qrBudget / modulesWithBorder));
+  const qrSize = modulesWithBorder * boxsize;
+  const qrX = width - qrSize - Math.max(4, pad - 8);
+  const qrY = Math.round((height - qrSize) / 2);
+  const textWidth = qrX - pad - 8;
+
+  const nameBase = thin ? Math.round(height * 0.32) : 34;
+  const metaBase = thin ? Math.round(height * 0.26) : 26;
+  const noteSize = 20;
+  const gap = thin ? 4 : 8;
+
+  // Adaptive name size + wrapping (~0.55 px per char per size unit)
+  const charsPerLine = (size: number) =>
+    Math.max(3, Math.floor(textWidth / (size * 0.55)));
+  let nameSize = nameBase;
+  let nameLines = wrapName(item.product_name, charsPerLine(nameSize));
+  const fitsName = () =>
+    nameLines.every((line) => line.length <= charsPerLine(nameSize)) &&
+    nameLines.length <= (thin ? 1 : 2);
+  while (!fitsName() && nameSize > Math.round(nameBase * 0.6)) {
+    nameSize -= 2;
+    nameLines = wrapName(item.product_name, charsPerLine(nameSize));
+  }
+  if (nameLines.length > (thin ? 1 : 2)) {
+    nameLines = nameLines.slice(0, thin ? 1 : 2);
+    const last = nameLines.length - 1;
+    const max = charsPerLine(nameSize);
+    if (nameLines[last].length > max) {
+      nameLines[last] = `${nameLines[last].slice(0, Math.max(1, max - 1))}…`;
+    }
+  }
+
+  const amount: string[] = [];
+  if (item.weight != null) amount.push(`${item.weight} ${item.unit || "g"}`);
+  if (item.pieces != null) amount.push(`${item.pieces} ${l("pieces_short")}`);
+
+  interface Line {
+    value: string;
+    size: number;
+  }
+  const lines: Line[] = nameLines.map((value) => ({ value, size: nameSize }));
+  if (thin) {
+    lines.push({
+      value: `${formatDate(item)}${amount.length ? " · " + amount.join(" · ") : ""}`,
+      size: metaBase,
+    });
+  } else {
+    lines.push({ value: formatDate(item), size: metaBase });
+    if (amount.length) lines.push({ value: amount.join(" · "), size: metaBase });
+    if (item.note) lines.push({ value: item.note, size: noteSize });
+  }
+
+  // Drop the note, then shrink, if the block does not fit vertically
+  const blockHeight = () =>
+    lines.reduce((sum, line) => sum + line.size, 0) + gap * (lines.length - 1);
+  if (blockHeight() > height - 2 * pad && item.note && !thin) {
+    lines.pop();
+  }
+
+  let y = Math.max(pad, Math.round((height - blockHeight()) / 2));
+  const payload: Record<string, unknown>[] = [];
+  for (const line of lines) {
+    payload.push({
+      type: "text",
+      value: line.value,
+      x: pad,
+      y,
+      size: line.size,
+      ...(font ? { font } : {}),
+    });
+    y += line.size + gap;
+  }
+  payload.push({
+    type: "qrcode",
+    data: qrPayload(item),
+    x: qrX,
+    y: qrY,
+    boxsize,
+    eclevel: 2,
+  });
+
+  return { payload, width, height };
+}

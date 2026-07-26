@@ -20,7 +20,8 @@ export interface HomeAssistant {
   callService(
     domain: string,
     service: string,
-    data?: Record<string, unknown>
+    data?: Record<string, unknown>,
+    target?: Record<string, unknown>
   ): Promise<unknown>;
   callWS<T>(message: Record<string, unknown>): Promise<T>;
 }
@@ -97,8 +98,15 @@ export interface CardConfig {
   auto_close?: number;
   /** Label size: "a4" sheet (default) or "<W>x<H>" in mm, e.g. "50x30". */
   label_format?: string;
-  /** "print" (default) or "image" — PNG for label-printer apps (Niimbot…). */
-  label_action?: "print" | "image";
+  /**
+   * "print" (default) — system print dialog; "image" — PNG for label-printer
+   * apps; "niimbot" — direct print via the hass-niimbot integration service.
+   */
+  label_action?: "print" | "image" | "niimbot";
+  /** Optional TTF font name passed to niimbot text elements (www/fonts). */
+  label_font?: string;
+  /** Optional niimbot printer device_id (only needed with multiple printers). */
+  label_printer?: string;
 }
 
 export type UpdatePayload =

@@ -103,6 +103,8 @@ export const cs: Record<string, string> = {
 
   // Labels & scanning
   print_label: "VYTISKNOUT ŠTÍTEK",
+  label_sent: "Štítek odeslán na tiskárnu Niimbot.",
+  labels_sent: "Odesláno {count} štítků na tiskárnu Niimbot.",
   label_downloaded:
     "Štítek uložen jako obrázek (PNG). Otevřete ho v aplikaci své tiskárny (např. Niimbot) a vytiskněte.",
   print_unsupported_app:

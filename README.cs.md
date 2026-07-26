@@ -126,10 +126,14 @@ old_months: 6          # přepíše globální práh zvýraznění
 language: cs           # cs | en (výchozí dle integrace)
 auto_close: 60         # zavřít popup po N sekundách nečinnosti
 label_format: a4       # a4 | 50x30 | 40x30 | 40x12 | 30x15 | libovolné "ŠxV" v mm
-label_action: print    # print (systémový tisk) | image (PNG pro aplikaci tiskárny)
+label_action: print    # print (systémový tisk) | image (PNG) | niimbot (přímý tisk)
+label_printer: ""      # jen niimbot: device_id (potřeba jen při více tiskárnách)
+label_font: ""         # jen niimbot: název TTF z www/fonts (kvůli speciálním znakům)
 ```
 
 ### Štítkové tiskárny (Niimbot apod.)
+
+- `label_action: niimbot` tiskne **přímo z Home Assistantu** přes integraci [hass-niimbot](https://github.com/eigger/hass-niimbot) (Bluetooth): karta zavolá `niimbot.print` s deklarativním payloadem (texty + QR), štítek vykreslí sama tiskárna, ostře. S jednou tiskárnou není potřeba nic dalšího; při více nastavte `label_printer` na device id. Kdyby se česká diakritika tiskla špatně, nahrajte TTF font do `www/fonts/` a nastavte `label_font`.
 
 - `label_format: 50x30` (nebo libovolné `ŠxV` v mm) tiskne **jeden štítek na stránku** přesně v dané velikosti — pro štítkové tiskárny s ovladačem (Brother, Dymo…).
 - **Skenování QR** používá nativní BarcodeDetector, kde je k dispozici, a jinde přibalený dekodér — funguje v Chromu, Firefoxu, Safari i companion aplikaci (kamera vyžaduje HTTPS)
