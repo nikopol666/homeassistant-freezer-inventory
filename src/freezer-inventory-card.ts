@@ -35,10 +35,13 @@ import {
   parseLabelFormat,
   printLabels,
   printUnsupported,
+  qrLink,
+  qrPayload,
+  QR_LINK_PARAM,
   shareLabelImages,
 } from "./labels";
 
-const CARD_VERSION = "1.2.0";
+const CARD_VERSION = "1.3.0";
 const DEFAULT_FREEZER = "main_freezer";
 const UNDO_TIMEOUT = 6000;
 
@@ -165,6 +168,42 @@ class FreezerInventoryCard extends LitElement {
     return this._config.old_months ?? this._integration?.old_months ?? 6;
   }
 
+  /** Resolver for the string encoded in printed/displayed QR codes. */
+  private get _qrData() {
+    if (this._config.qr_content === "link") {
+      const base =
+        this._config.qr_link_base ||
+        window.location.origin + window.location.pathname;
+      return (item: Pick<FreezerItem, "id">) => qrLink(base, item);
+    }
+    return qrPayload;
+  }
+
+  /** Deep link (?fi_item=<id> from a scanned label): open that item. */
+  private _deepLinkChecked = false;
+
+  private _checkDeepLink() {
+    if (this._deepLinkChecked || this._config.display_mode === "stats") return;
+    const params = new URLSearchParams(window.location.search);
+    const itemId = params.get(QR_LINK_PARAM);
+    if (!itemId) {
+      this._deepLinkChecked = true;
+      return;
+    }
+    const item = this._items.find((i) => i.id === itemId);
+    if (!item) return; // maybe another card's freezer — leave the param alone
+    this._deepLinkChecked = true;
+    params.delete(QR_LINK_PARAM);
+    const query = params.toString();
+    window.history.replaceState(
+      window.history.state,
+      "",
+      window.location.pathname + (query ? `?${query}` : "") + window.location.hash
+    );
+    this._selectedItem = item;
+    this._openDialog("remove");
+  }
+
   private async _maybeInit() {
     if (this._initStarted || !this.hass || !this.isConnected) return;
     this._initStarted = true;
@@ -206,6 +245,7 @@ class FreezerInventoryCard extends LitElement {
       if (payload.freezer_id !== this._freezerId) return;
       this._items = payload.items;
       this._loaded = true;
+      this._checkDeepLink();
       // The selected item may have changed or vanished under our hands
       if (this._selectedItem) {
         const fresh = payload.items.find((i) => i.id === this._selectedItem!.id);
@@ -521,7 +561,13 @@ class FreezerInventoryCard extends LitElement {
       this._busy = true;
       try {
         for (const item of items) {
-          const data = niimbotPrintData(item, l, format, this._config.label_font);
+          const data = niimbotPrintData(
+            item,
+            l,
+            format,
+            this._config.label_font,
+            this._qrData
+          );
           await this.hass.callService(
             "niimbot",
             "print",
@@ -546,7 +592,7 @@ class FreezerInventoryCard extends LitElement {
     if (this._config.label_action === "image") {
       // PNG for label-printer apps (Niimbot & co.) via share sheet/download
       try {
-        const delivery = await shareLabelImages(items, l, format);
+        const delivery = await shareLabelImages(items, l, format, this._qrData);
         if (delivery === "downloaded") {
           this._showToast(l("label_downloaded"));
         }
@@ -559,7 +605,7 @@ class FreezerInventoryCard extends LitElement {
       this._showToast(l("print_unsupported_app"));
       return;
     }
-    printLabels(items, l, format);
+    printLabels(items, l, format, this._qrData);
   }
 
   private _onScanFound(e: CustomEvent<{ itemId: string }>) {
@@ -744,6 +790,7 @@ class FreezerInventoryCard extends LitElement {
             .submitting=${this._busy}
             .errorText=${this._errorText}
             .canMove=${this._freezers.length > 1}
+            .qrData=${this._qrData(this._selectedItem)}
             @fi-remove-all=${this._onRemoveAll}
             @fi-remove-half=${this._onRemoveHalf}
             @fi-enter-amount=${() => {

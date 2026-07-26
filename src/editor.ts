@@ -32,6 +32,10 @@ const TEXTS: Record<string, Record<string, string>> = {
     label_niimbot: "Přímo přes Niimbot integraci (BLE)",
     label_printer: "Niimbot device_id (nepovinné, jen při více tiskárnách)",
     label_font: "Font štítku (nepovinné, TTF z www/fonts)",
+    qr_content: "Obsah QR kódu",
+    qr_id: "Interní ID (kompaktní, sken jen v kartě)",
+    qr_link: "Odkaz na dashboard (načte i fotoaparát mobilu)",
+    qr_link_base: "Veřejná adresa dashboardu (doporučeno HTTPS, prázdné = aktuální stránka)",
   },
   en: {
     freezer_id: "Freezer",
@@ -60,6 +64,10 @@ const TEXTS: Record<string, Record<string, string>> = {
     label_niimbot: "Directly via the Niimbot integration (BLE)",
     label_printer: "Niimbot device_id (optional, only with multiple printers)",
     label_font: "Label font (optional, TTF from www/fonts)",
+    qr_content: "QR code content",
+    qr_id: "Internal ID (compact, scans in the card only)",
+    qr_link: "Dashboard link (native phone camera can open it)",
+    qr_link_base: "Public dashboard URL (HTTPS recommended, empty = current page)",
   },
 };
 
@@ -317,6 +325,44 @@ class FreezerInventoryCardEditor extends LitElement {
                   @input=${(e: InputEvent) =>
                     this._update({
                       label_font:
+                        (e.target as HTMLInputElement).value.trim() || undefined,
+                    })}
+                />
+              </div>
+            `
+          : nothing}
+
+        <div class="field">
+          <label>${t.qr_content}</label>
+          <select
+            .value=${c.qr_content ?? "id"}
+            @change=${(e: Event) => {
+              const value = (e.target as HTMLSelectElement).value;
+              this._update({
+                qr_content: value === "link" ? "link" : undefined,
+              });
+            }}
+          >
+            <option value="id" ?selected=${c.qr_content !== "link"}>
+              ${t.qr_id}
+            </option>
+            <option value="link" ?selected=${c.qr_content === "link"}>
+              ${t.qr_link}
+            </option>
+          </select>
+        </div>
+
+        ${c.qr_content === "link"
+          ? html`
+              <div class="field">
+                <label>${t.qr_link_base}</label>
+                <input
+                  type="url"
+                  placeholder="https://xxxx.ui.nabu.casa/lovelace/mrazak"
+                  .value=${c.qr_link_base ?? ""}
+                  @input=${(e: InputEvent) =>
+                    this._update({
+                      qr_link_base:
                         (e.target as HTMLInputElement).value.trim() || undefined,
                     })}
                 />

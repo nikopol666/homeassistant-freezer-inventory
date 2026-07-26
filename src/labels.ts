@@ -4,21 +4,41 @@ import { formatDate } from "./localize";
 import type { LocalizeFunc } from "./localize";
 
 export const QR_PREFIX = "fi:";
+export const QR_LINK_PARAM = "fi_item";
 
-/** QR payload encoded on printed labels. */
+/** Resolves the string encoded in an item's QR code. */
+export type QrData = (item: Pick<FreezerItem, "id">) => string;
+
+/** Default QR payload: compact internal id (dense-print friendly). */
 export function qrPayload(item: Pick<FreezerItem, "id">): string {
   return `${QR_PREFIX}${item.id}`;
 }
 
-/** Item id from a scanned QR payload, or null when it is not ours. */
-export function itemIdFromQr(payload: string): string | null {
-  return payload.startsWith(QR_PREFIX) ? payload.slice(QR_PREFIX.length) : null;
+/**
+ * Deep-link QR payload: a dashboard URL the phone's native camera app can
+ * open — the card detects the query parameter and opens the item dialog.
+ */
+export function qrLink(base: string, item: Pick<FreezerItem, "id">): string {
+  const clean = base.split("#")[0].split("?")[0].replace(/\/+$/, "");
+  return `${clean}?${QR_LINK_PARAM}=${item.id}`;
 }
 
-/** SVG markup of the item QR code. */
-export function qrSvg(item: Pick<FreezerItem, "id">, cellSize = 4): string {
+/** Item id from a scanned QR payload ("fi:<id>" or a deep link), or null. */
+export function itemIdFromQr(payload: string): string | null {
+  if (payload.startsWith(QR_PREFIX)) return payload.slice(QR_PREFIX.length);
+  try {
+    const id = new URL(payload).searchParams.get(QR_LINK_PARAM);
+    if (id) return id;
+  } catch {
+    // not a URL
+  }
+  return null;
+}
+
+/** SVG markup of a QR code. */
+export function qrSvg(data: string, cellSize = 4): string {
   const qr = qrcode(0, "M");
-  qr.addData(qrPayload(item));
+  qr.addData(data);
   qr.make();
   return qr.createSvgTag({ cellSize, margin: 0, scalable: true });
 }
@@ -36,13 +56,13 @@ export function parseLabelFormat(value: string | undefined): LabelFormat {
   return { width: Number(match[1]), height: Number(match[2]) };
 }
 
-function labelHtml(item: FreezerItem, l: LocalizeFunc): string {
+function labelHtml(item: FreezerItem, l: LocalizeFunc, qrData: QrData): string {
   const amount: string[] = [];
   if (item.weight != null) amount.push(`${item.weight} ${item.unit || "g"}`);
   if (item.pieces != null) amount.push(`${item.pieces} ${l("pieces_short")}`);
   return `
     <div class="label">
-      <div class="qr">${qrSvg(item)}</div>
+      <div class="qr">${qrSvg(qrData(item))}</div>
       <div class="text">
         <div class="name">${escapeHtml(item.product_name)}</div>
         <div class="meta">${formatDate(item)}${
@@ -127,7 +147,8 @@ const A4_SHEET_CSS = `
 export function printLabels(
   items: FreezerItem[],
   l: LocalizeFunc,
-  format: LabelFormat = { width: null, height: null }
+  format: LabelFormat = { width: null, height: null },
+  qrData: QrData = qrPayload
 ): void {
   const iframe = document.createElement("iframe");
   iframe.style.position = "fixed";
@@ -152,7 +173,7 @@ export function printLabels(
 <title>Freezer Inventory Labels</title>
 <style>${css}</style>
 </head>
-<body>${items.map((item) => labelHtml(item, l)).join("")}</body>
+<body>${items.map((item) => labelHtml(item, l, qrData)).join("")}</body>
 </html>`);
   doc.close();
 
@@ -185,7 +206,8 @@ const PX_PER_MM = 8; // ≈203 dpi, the native resolution of most label printers
 function drawLabelCanvas(
   item: FreezerItem,
   l: LocalizeFunc,
-  format: LabelFormat
+  format: LabelFormat,
+  qrData: QrData
 ): HTMLCanvasElement {
   const widthMm = format.width ?? 50;
   const heightMm = format.height ?? 30;
@@ -205,7 +227,7 @@ function drawLabelCanvas(
   const qrSize = Math.min(height - 2 * pad, Math.round(width * 0.36));
   const qrY = Math.round((height - qrSize) / 2);
   const qr = qrcode(0, "M");
-  qr.addData(qrPayload(item));
+  qr.addData(qrData(item));
   qr.make();
   const modules = qr.getModuleCount();
   const cell = qrSize / modules;
@@ -317,11 +339,12 @@ function downloadDataUrl(dataUrl: string, name: string): void {
 export async function shareLabelImages(
   items: FreezerItem[],
   l: LocalizeFunc,
-  format: LabelFormat
+  format: LabelFormat,
+  qrData: QrData = qrPayload
 ): Promise<"shared" | "downloaded"> {
   const rendered = items.map((item) => ({
     name: labelFileName(item),
-    dataUrl: drawLabelCanvas(item, l, format).toDataURL("image/png"),
+    dataUrl: drawLabelCanvas(item, l, format, qrData).toDataURL("image/png"),
   }));
 
   if (rendered.length === 1 && typeof navigator.share === "function") {
@@ -385,7 +408,8 @@ export function niimbotPrintData(
   item: FreezerItem,
   l: LocalizeFunc,
   format: LabelFormat,
-  font?: string
+  font?: string,
+  qrData: QrData = qrPayload
 ): NiimbotPrintData {
   const widthMm = format.width ?? 50;
   const heightMm = format.height ?? 30;
@@ -398,7 +422,7 @@ export function niimbotPrintData(
   // QR sizing in the module-based form proven with hass-niimbot
   // (boxsize + eclevel: 2); the renderer adds a default 4-module border.
   const qr = qrcode(0, "H");
-  qr.addData(qrPayload(item));
+  qr.addData(qrData(item));
   qr.make();
   const modulesWithBorder = qr.getModuleCount() + 8;
   const qrBudget = Math.min(height - 2 * (thin ? 4 : 8), Math.round(width * 0.5));
@@ -476,7 +500,7 @@ export function niimbotPrintData(
   }
   payload.push({
     type: "qrcode",
-    data: qrPayload(item),
+    data: qrData(item),
     x: qrX,
     y: qrY,
     boxsize,

@@ -107,6 +107,13 @@ export interface CardConfig {
   label_font?: string;
   /** Optional niimbot printer device_id (only needed with multiple printers). */
   label_printer?: string;
+  /**
+   * QR content: "id" (compact, default) or "link" — a dashboard URL that the
+   * phone's native camera app can open; the card then opens the item dialog.
+   */
+  qr_content?: "id" | "link";
+  /** Base URL for link QRs (public HTTPS address; default: current page). */
+  qr_link_base?: string;
 }
 
 export type UpdatePayload =

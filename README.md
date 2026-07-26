@@ -129,7 +129,13 @@ label_format: a4       # a4 | 50x30 | 40x30 | 40x12 | 30x15 | any "WxH" in mm
 label_action: print    # print (system dialog) | image (PNG) | niimbot (direct print)
 label_printer: ""      # niimbot only: device_id (only needed with multiple printers)
 label_font: ""         # niimbot only: TTF name from www/fonts (for special glyphs)
+qr_content: id         # id (compact) | link (native phone camera can open it)
+qr_link_base: ""       # link only: public dashboard URL (default: current page)
 ```
+
+### Scanning with the phone's native camera
+
+Set `qr_content: link` (and ideally `qr_link_base` to your public HTTPS dashboard URL, e.g. Nabu Casa). Labels then carry a URL instead of a bare id — scanning one with the **regular camera app** opens the dashboard in the browser and the card pops up that item's dialog automatically. The in-card scanner reads both QR variants.
 
 ### Label printers (Niimbot & co.)
 

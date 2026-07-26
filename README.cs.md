@@ -129,7 +129,13 @@ label_format: a4       # a4 | 50x30 | 40x30 | 40x12 | 30x15 | libovolné "ŠxV" 
 label_action: print    # print (systémový tisk) | image (PNG) | niimbot (přímý tisk)
 label_printer: ""      # jen niimbot: device_id (potřeba jen při více tiskárnách)
 label_font: ""         # jen niimbot: název TTF z www/fonts (kvůli speciálním znakům)
+qr_content: id         # id (kompaktní) | link (načte i fotoaparát mobilu)
+qr_link_base: ""       # jen link: veřejná adresa dashboardu (výchozí: aktuální stránka)
 ```
+
+### Skenování nativním fotoaparátem mobilu
+
+Nastavte `qr_content: link` (a ideálně `qr_link_base` na veřejnou HTTPS adresu dashboardu, např. Nabu Casa). Štítky pak nesou URL místo holého ID — naskenování **běžnou aplikací fotoaparátu** otevře dashboard v prohlížeči a karta sama vyskočí s dialogem dané položky. Skener v kartě čte obě varianty QR.
 
 ### Štítkové tiskárny (Niimbot apod.)
 

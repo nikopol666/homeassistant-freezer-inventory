@@ -6,7 +6,7 @@ import type { LocalizeFunc } from "../localize";
 import { itemLabel } from "../localize";
 import { fireEvent } from "../ha-helpers";
 import { sharedStyles } from "../styles";
-import { qrSvg } from "../labels";
+import { qrPayload, qrSvg } from "../labels";
 
 /** Confirm view for removing an item: whole / half / amount / edit / cancel. */
 export class FiRemoveDialog extends LitElement {
@@ -18,6 +18,8 @@ export class FiRemoveDialog extends LitElement {
   @property({ attribute: false }) mode: "confirm" | "amount" = "confirm";
   /** Show the MOVE button (more than one freezer exists). */
   @property({ attribute: false }) canMove = false;
+  /** String encoded in the displayed QR (defaults to the compact id form). */
+  @property({ attribute: false }) qrData?: string;
 
   @state() private _amount = "";
   @state() private _pieces = "";
@@ -104,7 +106,9 @@ export class FiRemoveDialog extends LitElement {
         <h2 class="view-title question">
           ${l("remove_question", { label: itemLabel(this.item, l) })}
         </h2>
-        <div class="qr" title=${this.item.id}>${unsafeHTML(qrSvg(this.item, 3))}</div>
+        <div class="qr" title=${this.item.id}>
+          ${unsafeHTML(qrSvg(this.qrData ?? qrPayload(this.item), 3))}
+        </div>
       </div>
       ${this.item.note
         ? html`
