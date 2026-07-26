@@ -23,6 +23,28 @@ export function qrLink(base: string, item: Pick<FreezerItem, "id">): string {
   return `${clean}?${QR_LINK_PARAM}=${item.id}`;
 }
 
+/**
+ * Companion-app QR payload: a `homeassistant://navigate/...` deep link. The
+ * app resolves it against its own server URL (verified in the Android app:
+ * UrlUtil strips the prefix and keeps the query), so no public address is
+ * needed. `basePath` is the dashboard path, e.g. "/lovelace/mrazak".
+ */
+export function qrAppLink(
+  basePath: string,
+  item: Pick<FreezerItem, "id">
+): string {
+  let path = basePath;
+  if (/^https?:/i.test(path)) {
+    try {
+      path = new URL(path).pathname;
+    } catch {
+      // keep as-is
+    }
+  }
+  const clean = path.split("#")[0].split("?")[0].replace(/^\/+|\/+$/g, "");
+  return `homeassistant://navigate/${clean}?${QR_LINK_PARAM}=${item.id}`;
+}
+
 /** Item id from a scanned QR payload ("fi:<id>" or a deep link), or null. */
 export function itemIdFromQr(payload: string): string | null {
   if (payload.startsWith(QR_PREFIX)) return payload.slice(QR_PREFIX.length);

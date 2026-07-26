@@ -129,13 +129,18 @@ label_format: a4       # a4 | 50x30 | 40x30 | 40x12 | 30x15 | libovolné "ŠxV" 
 label_action: print    # print (systémový tisk) | image (PNG) | niimbot (přímý tisk)
 label_printer: ""      # jen niimbot: device_id (potřeba jen při více tiskárnách)
 label_font: ""         # jen niimbot: název TTF z www/fonts (kvůli speciálním znakům)
-qr_content: id         # id (kompaktní) | link (načte i fotoaparát mobilu)
-qr_link_base: ""       # jen link: veřejná adresa dashboardu (výchozí: aktuální stránka)
+qr_content: id         # id (kompaktní) | link (webová URL) | app (odkaz do companion aplikace)
+qr_link_base: ""       # link: veřejná adresa dashboardu; app: cesta dashboardu (výchozí: aktuální stránka)
 ```
 
 ### Skenování nativním fotoaparátem mobilu
 
-Nastavte `qr_content: link` (a ideálně `qr_link_base` na veřejnou HTTPS adresu dashboardu, např. Nabu Casa). Štítky pak nesou URL místo holého ID — naskenování **běžnou aplikací fotoaparátu** otevře dashboard v prohlížeči a karta sama vyskočí s dialogem dané položky. Skener v kartě čte obě varianty QR.
+Štítky můžou nést naskenovatelný odkaz místo holého ID — sken **běžnou aplikací fotoaparátu** pak otevře Home Assistant rovnou s dialogem dané položky. Dvě varianty:
+
+- `qr_content: app` — QR obsahuje `homeassistant://navigate/<cesta-dashboardu>?fi_item=…`, což otevře přímo **companion aplikaci**. **Není potřeba žádná veřejná adresa** — aplikace si cestu vyřeší proti svému serveru. Do `qr_link_base` dejte cestu dashboardu (např. `/lovelace/mrazak`); výchozí je cesta aktuální stránky.
+- `qr_content: link` — QR obsahuje běžnou webovou URL (`qr_link_base` = veřejná HTTPS adresa, např. Nabu Casa). Funguje všude, kde je prohlížeč, i na mobilech bez aplikace.
+
+Pozn.: většina fotoaparátů otevře obě formy, ale některé nabízejí otevření jen u `http(s)` odkazů — kdyby `app` QR na vašem mobilu nešel otevřít, použijte `link`. Skener v kartě čte všechny tři varianty QR.
 
 ### Štítkové tiskárny (Niimbot apod.)
 

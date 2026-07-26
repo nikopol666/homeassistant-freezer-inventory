@@ -129,13 +129,18 @@ label_format: a4       # a4 | 50x30 | 40x30 | 40x12 | 30x15 | any "WxH" in mm
 label_action: print    # print (system dialog) | image (PNG) | niimbot (direct print)
 label_printer: ""      # niimbot only: device_id (only needed with multiple printers)
 label_font: ""         # niimbot only: TTF name from www/fonts (for special glyphs)
-qr_content: id         # id (compact) | link (native phone camera can open it)
-qr_link_base: ""       # link only: public dashboard URL (default: current page)
+qr_content: id         # id (compact) | link (web URL) | app (companion-app deep link)
+qr_link_base: ""       # link: public dashboard URL; app: dashboard path (default: current page)
 ```
 
 ### Scanning with the phone's native camera
 
-Set `qr_content: link` (and ideally `qr_link_base` to your public HTTPS dashboard URL, e.g. Nabu Casa). Labels then carry a URL instead of a bare id — scanning one with the **regular camera app** opens the dashboard in the browser and the card pops up that item's dialog automatically. The in-card scanner reads both QR variants.
+Labels can carry a scannable link instead of a bare id — scanning one with the **regular camera app** then opens Home Assistant with that item's dialog already popped up. Two variants:
+
+- `qr_content: app` — the QR contains `homeassistant://navigate/<dashboard-path>?fi_item=…`, which opens the **companion app** directly. **No public URL needed** — the app resolves the path against its own server. Set `qr_link_base` to the dashboard path (e.g. `/lovelace/mrazak`); the current page path is the default.
+- `qr_content: link` — the QR contains a normal web URL (`qr_link_base` should be your public HTTPS address, e.g. Nabu Casa). Works everywhere a browser does, including phones without the app.
+
+Note: most camera apps open both forms, but some only make `http(s)` links tappable — if `app` QRs don't offer to open on your phone, use `link`. The in-card scanner reads all three QR variants.
 
 ### Label printers (Niimbot & co.)
 

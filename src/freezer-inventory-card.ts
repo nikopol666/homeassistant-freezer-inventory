@@ -35,13 +35,14 @@ import {
   parseLabelFormat,
   printLabels,
   printUnsupported,
+  qrAppLink,
   qrLink,
   qrPayload,
   QR_LINK_PARAM,
   shareLabelImages,
 } from "./labels";
 
-const CARD_VERSION = "1.3.0";
+const CARD_VERSION = "1.4.0";
 const DEFAULT_FREEZER = "main_freezer";
 const UNDO_TIMEOUT = 6000;
 
@@ -175,6 +176,10 @@ class FreezerInventoryCard extends LitElement {
         this._config.qr_link_base ||
         window.location.origin + window.location.pathname;
       return (item: Pick<FreezerItem, "id">) => qrLink(base, item);
+    }
+    if (this._config.qr_content === "app") {
+      const basePath = this._config.qr_link_base || window.location.pathname;
+      return (item: Pick<FreezerItem, "id">) => qrAppLink(basePath, item);
     }
     return qrPayload;
   }

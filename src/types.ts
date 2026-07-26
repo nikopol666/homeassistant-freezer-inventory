@@ -108,11 +108,15 @@ export interface CardConfig {
   /** Optional niimbot printer device_id (only needed with multiple printers). */
   label_printer?: string;
   /**
-   * QR content: "id" (compact, default) or "link" — a dashboard URL that the
-   * phone's native camera app can open; the card then opens the item dialog.
+   * QR content: "id" (compact, default), "link" (dashboard URL for any
+   * browser) or "app" (homeassistant:// deep link that opens the companion
+   * app — no public address needed).
    */
-  qr_content?: "id" | "link";
-  /** Base URL for link QRs (public HTTPS address; default: current page). */
+  qr_content?: "id" | "link" | "app";
+  /**
+   * link: public dashboard URL; app: dashboard path (e.g. /lovelace/mrazak).
+   * Default: the current page.
+   */
   qr_link_base?: string;
 }
 

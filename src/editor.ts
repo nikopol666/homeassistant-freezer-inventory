@@ -34,8 +34,9 @@ const TEXTS: Record<string, Record<string, string>> = {
     label_font: "Font štítku (nepovinné, TTF z www/fonts)",
     qr_content: "Obsah QR kódu",
     qr_id: "Interní ID (kompaktní, sken jen v kartě)",
-    qr_link: "Odkaz na dashboard (načte i fotoaparát mobilu)",
-    qr_link_base: "Veřejná adresa dashboardu (doporučeno HTTPS, prázdné = aktuální stránka)",
+    qr_link: "Webový odkaz (otevře prohlížeč, nutná veřejná adresa)",
+    qr_app: "Odkaz do aplikace HA (homeassistant://, bez veřejné adresy)",
+    qr_link_base: "Adresa/cesta dashboardu (prázdné = aktuální stránka)",
   },
   en: {
     freezer_id: "Freezer",
@@ -66,8 +67,9 @@ const TEXTS: Record<string, Record<string, string>> = {
     label_font: "Label font (optional, TTF from www/fonts)",
     qr_content: "QR code content",
     qr_id: "Internal ID (compact, scans in the card only)",
-    qr_link: "Dashboard link (native phone camera can open it)",
-    qr_link_base: "Public dashboard URL (HTTPS recommended, empty = current page)",
+    qr_link: "Web link (opens a browser, public URL required)",
+    qr_app: "HA app link (homeassistant://, no public URL needed)",
+    qr_link_base: "Dashboard URL/path (empty = current page)",
   },
 };
 
@@ -339,20 +341,29 @@ class FreezerInventoryCardEditor extends LitElement {
             @change=${(e: Event) => {
               const value = (e.target as HTMLSelectElement).value;
               this._update({
-                qr_content: value === "link" ? "link" : undefined,
+                qr_content:
+                  value === "link" || value === "app"
+                    ? (value as "link" | "app")
+                    : undefined,
               });
             }}
           >
-            <option value="id" ?selected=${c.qr_content !== "link"}>
+            <option
+              value="id"
+              ?selected=${!c.qr_content || c.qr_content === "id"}
+            >
               ${t.qr_id}
             </option>
             <option value="link" ?selected=${c.qr_content === "link"}>
               ${t.qr_link}
             </option>
+            <option value="app" ?selected=${c.qr_content === "app"}>
+              ${t.qr_app}
+            </option>
           </select>
         </div>
 
-        ${c.qr_content === "link"
+        ${c.qr_content === "link" || c.qr_content === "app"
           ? html`
               <div class="field">
                 <label>${t.qr_link_base}</label>
