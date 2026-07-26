@@ -89,21 +89,36 @@ export function subscribeUpdates(
 // Writes: item mutations go through HA services (spec preference),
 // catalog management and undo go through websocket commands.
 
-export async function addItem(
-  hass: HomeAssistant,
-  data: {
-    freezer_id: string;
-    product_id?: string;
-    product_name?: string;
-    month: number;
-    year: number;
-    weight?: number;
-    pieces?: number;
-    note?: string;
-    quantity?: number;
-  }
-): Promise<void> {
+export interface AddItemData {
+  freezer_id: string;
+  product_id?: string;
+  product_name?: string;
+  month: number;
+  year: number;
+  weight?: number;
+  pieces?: number;
+  note?: string;
+  quantity?: number;
+}
+
+export async function addItem(hass: HomeAssistant, data: AddItemData): Promise<void> {
   await hass.callService(DOMAIN, "add_item", data);
+}
+
+/** Add items and return the created item ids (for immediate label printing). */
+export async function addItemWithIds(
+  hass: HomeAssistant,
+  data: AddItemData
+): Promise<string[]> {
+  const result = (await hass.callService(
+    DOMAIN,
+    "add_item",
+    data,
+    undefined,
+    true,
+    true
+  )) as { response?: { item_ids?: string[] } };
+  return result?.response?.item_ids ?? [];
 }
 
 export async function removeItem(

@@ -158,6 +158,7 @@ Each item can track a **weight**, a **piece count**, both, or neither:
 - *Remove half* halves whatever is tracked (mathematical rounding, original values preserved)
 - *Enter amount* lets you remove grams and/or pieces; removing everything deletes the item
 - The add form also has a *number of packages* field that creates N separate items at once
+- **ADD & PRINT LABELS** in the add form creates the packages and immediately prints one label per package (each with its own QR)
 
 ## Services
 

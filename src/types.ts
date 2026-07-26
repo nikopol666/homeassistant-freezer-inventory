@@ -21,8 +21,10 @@ export interface HomeAssistant {
     domain: string,
     service: string,
     data?: Record<string, unknown>,
-    target?: Record<string, unknown>
-  ): Promise<unknown>;
+    target?: Record<string, unknown>,
+    notifyOnError?: boolean,
+    returnResponse?: boolean
+  ): Promise<{ response?: unknown } | unknown>;
   callWS<T>(message: Record<string, unknown>): Promise<T>;
 }
 

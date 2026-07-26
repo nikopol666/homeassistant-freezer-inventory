@@ -42,7 +42,7 @@ import {
   shareLabelImages,
 } from "./labels";
 
-const CARD_VERSION = "1.4.0";
+const CARD_VERSION = "1.5.0";
 const DEFAULT_FREEZER = "main_freezer";
 const UNDO_TIMEOUT = 6000;
 
@@ -405,8 +405,11 @@ class FreezerInventoryCard extends LitElement {
   // ------------------------------------------------------------------
   // Event handlers from views
 
-  private async _onFormSubmit(e: CustomEvent<{ result: ItemFormResult }>) {
+  private async _onFormSubmit(
+    e: CustomEvent<{ result: ItemFormResult; print?: boolean }>
+  ) {
     const result = e.detail.result;
+    const printAfter = e.detail.print === true;
     const l = this._localize;
     if (this._view === "edit" && this._selectedItem) {
       const item = this._selectedItem;
@@ -428,21 +431,25 @@ class FreezerInventoryCard extends LitElement {
         this._showToast(l("item_updated"));
       }
     } else {
-      const ok = await this._mutate(
-        () =>
-          ws.addItem(this.hass!, {
-            freezer_id: this._freezerId,
-            product_id: this._customProduct ? undefined : this._pickedProduct?.id,
-            product_name: result.product_name,
-            month: result.month,
-            year: result.year,
-            weight: result.weight ?? undefined,
-            pieces: result.pieces ?? undefined,
-            note: result.note || undefined,
-            quantity: result.quantity,
-          }),
-        l("err_add_failed")
-      );
+      const data = {
+        freezer_id: this._freezerId,
+        product_id: this._customProduct ? undefined : this._pickedProduct?.id,
+        product_name: result.product_name,
+        month: result.month,
+        year: result.year,
+        weight: result.weight ?? undefined,
+        pieces: result.pieces ?? undefined,
+        note: result.note || undefined,
+        quantity: result.quantity,
+      };
+      let createdIds: string[] = [];
+      const ok = await this._mutate(async () => {
+        if (printAfter) {
+          createdIds = await ws.addItemWithIds(this.hass!, data);
+        } else {
+          await ws.addItem(this.hass!, data);
+        }
+      }, l("err_add_failed"));
       if (ok) {
         const label = [
           result.product_name,
@@ -457,6 +464,31 @@ class FreezerInventoryCard extends LitElement {
         const prefix = result.quantity > 1 ? `${result.quantity}× ` : "";
         this._backToList();
         this._showToast(`${l("added_confirmation")} ${prefix}${label}`);
+        if (printAfter && createdIds.length) {
+          // One label per created package, built from the submitted values
+          const product = this._customProduct ? null : this._pickedProduct;
+          const category = product?.category_id
+            ? this._categories.find((c) => c.id === product.category_id)
+            : undefined;
+          const created: FreezerItem[] = createdIds.map((id) => ({
+            id,
+            product_id: product?.id ?? null,
+            product_name: result.product_name,
+            category_id: category?.id ?? null,
+            category_name: category?.name ?? null,
+            month: result.month,
+            year: result.year,
+            weight: result.weight,
+            original_weight: result.weight,
+            pieces: result.pieces,
+            original_pieces: result.pieces,
+            unit: "g",
+            note: result.note,
+            created_at: "",
+            updated_at: "",
+          }));
+          await this._print(created);
+        }
       }
     }
   }

@@ -33,6 +33,7 @@ export const en: Record<string, string> = {
   note: "Note",
   quantity: "Number of packages",
   add_to_freezer: "ADD TO FREEZER",
+  add_and_print: "ADD & PRINT LABELS",
   save: "SAVE",
   cancel: "CANCEL",
   confirm: "CONFIRM",

@@ -33,6 +33,7 @@ export const cs: Record<string, string> = {
   note: "Poznámka",
   quantity: "Počet balíčků",
   add_to_freezer: "PŘIDAT DO MRAZÁKU",
+  add_and_print: "PŘIDAT A VYTISKNOUT ŠTÍTKY",
   save: "ULOŽIT",
   cancel: "ZRUŠIT",
   confirm: "POTVRDIT",

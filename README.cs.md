@@ -158,6 +158,7 @@ Každá položka může evidovat **hmotnost**, **počet kusů**, obojí, nebo ni
 - *Vyjmout polovinu* půlí vše, co je evidováno (matematické zaokrouhlení, původní hodnoty zůstávají)
 - *Zadat množství* umožní vyjmout gramy a/nebo kusy; vyjmutí všeho položku odstraní
 - Formulář přidání má navíc pole *počet balíčků*, které vytvoří N samostatných položek najednou
+- **PŘIDAT A VYTISKNOUT ŠTÍTKY** ve formuláři založí balíčky a rovnou vytiskne štítek pro každý z nich (každý s vlastním QR)
 
 ## Služby
 

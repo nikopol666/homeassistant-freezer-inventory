@@ -88,6 +88,8 @@ export class FiItemForm extends LitElement {
     return value;
   }
 
+  private _printAfter = false;
+
   private _submit() {
     const l = this.localize;
     this._validationError = "";
@@ -146,7 +148,8 @@ export class FiItemForm extends LitElement {
     if (this._isEdit) {
       result.original_weight = originalWeight;
     }
-    fireEvent(this, "fi-form-submit", { result });
+    fireEvent(this, "fi-form-submit", { result, print: this._printAfter });
+    this._printAfter = false;
   }
 
   render() {
@@ -400,10 +403,27 @@ export class FiItemForm extends LitElement {
         <button
           class="btn btn-primary"
           ?disabled=${this.submitting}
-          @click=${this._submit}
+          @click=${() => {
+            this._printAfter = false;
+            this._submit();
+          }}
         >
           ${this._isEdit ? l("save") : l("add_to_freezer")}
         </button>
+        ${!this._isEdit
+          ? html`
+              <button
+                class="btn btn-outline"
+                ?disabled=${this.submitting}
+                @click=${() => {
+                  this._printAfter = true;
+                  this._submit();
+                }}
+              >
+                ${l("add_and_print")}
+              </button>
+            `
+          : nothing}
         <button
           class="btn btn-outline"
           @click=${() => fireEvent(this, "fi-form-cancel")}
