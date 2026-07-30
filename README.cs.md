@@ -64,6 +64,10 @@ Vlastní integrace a Lovelace karta pro Home Assistant určená k evidenci jedno
 
 ![Správa kategorií a produktů](docs/images/manage-light.png)
 
+**Souhrn podle produktů** — přepínač v seznamu (☰/Σ) sečte balíčky podle produktu; ťuknutím se produkt rozbalí na jednotlivé balíčky:
+
+<img src="docs/images/summary-dark.png" alt="Souhrn podle produktů s rozbalitelnými balíčky" width="430"/>
+
 **Režim statistik** (`display_mode: stats`) — složení podle kategorií a měsíční spotřeba:
 
 <img src="docs/images/stats-light.png" alt="Karta statistik" width="460"/>
@@ -122,6 +126,7 @@ show_count: true
 show_weight: true
 show_note: true
 sort: oldest_first     # oldest_first | newest_first
+group_by: items        # items (balíčky) | products (souhrn podle produktů)
 old_months: 6          # přepíše globální práh zvýraznění
 language: cs           # cs | en (výchozí dle integrace)
 auto_close: 60         # zavřít popup po N sekundách nečinnosti
@@ -159,6 +164,7 @@ Každá položka může evidovat **hmotnost**, **počet kusů**, obojí, nebo ni
 - *Zadat množství* umožní vyjmout gramy a/nebo kusy; vyjmutí všeho položku odstraní
 - Formulář přidání má navíc pole *počet balíčků*, které vytvoří N samostatných položek najednou
 - **PŘIDAT A VYTISKNOUT ŠTÍTKY** ve formuláři založí balíčky a rovnou vytiskne štítek pro každý z nich (každý s vlastním QR)
+- Seznam má dva pohledy přepínatelné v záhlaví: jednotlivé **balíčky**, nebo **souhrn podle produktů** (např. Kuřecí prsa · 2,5 kg · 6 ks · 3 položky, rozbalitelné); `group_by` určuje výchozí
 
 ## Služby
 

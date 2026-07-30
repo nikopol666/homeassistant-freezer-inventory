@@ -3,18 +3,8 @@ import { property } from "lit/decorators.js";
 import type { Category, Stats } from "../types";
 import type { LocalizeFunc } from "../localize";
 import { avatarStyle, iconTemplate } from "../ha-helpers";
+import { formatWeight } from "../localize";
 import { sharedStyles } from "../styles";
-
-function formatWeight(grams: number, language: string): string {
-  if (grams >= 1000) {
-    const kg = grams / 1000;
-    const text = (Math.round(kg * 10) / 10).toLocaleString(
-      language === "cs" ? "cs-CZ" : "en-US"
-    );
-    return `${text} kg`;
-  }
-  return `${grams} g`;
-}
 
 /** Current composition + monthly consumption. */
 export class FiStatsView extends LitElement {

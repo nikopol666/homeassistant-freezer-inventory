@@ -94,6 +94,8 @@ export interface CardConfig {
   show_weight?: boolean;
   show_note?: boolean;
   sort?: "oldest_first" | "newest_first";
+  /** Default list view: individual packages or a per-product summary. */
+  group_by?: "items" | "products";
   old_months?: number;
   language?: "cs" | "en";
   /** Close the popup after this many seconds of inactivity (0/unset = off). */

@@ -20,6 +20,9 @@ const TEXTS: Record<string, Record<string, string>> = {
     sort: "Řazení",
     oldest_first: "Od nejstarších",
     newest_first: "Od nejnovějších",
+    group_by: "Výchozí pohled seznamu",
+    group_items: "Balíčky",
+    group_products: "Souhrn podle produktů",
     old_months: "Zvýraznit starší než (měsíců)",
     language: "Jazyk karty",
     lang_auto: "Podle integrace",
@@ -53,6 +56,9 @@ const TEXTS: Record<string, Record<string, string>> = {
     sort: "Sorting",
     oldest_first: "Oldest first",
     newest_first: "Newest first",
+    group_by: "Default list view",
+    group_items: "Packages",
+    group_products: "Summary by product",
     old_months: "Highlight older than (months)",
     language: "Card language",
     lang_auto: "Follow integration",
@@ -211,6 +217,26 @@ class FreezerInventoryCardEditor extends LitElement {
             </option>
             <option value="newest_first" ?selected=${c.sort === "newest_first"}>
               ${t.newest_first}
+            </option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>${t.group_by}</label>
+          <select
+            .value=${c.group_by ?? "items"}
+            @change=${(e: Event) => {
+              const value = (e.target as HTMLSelectElement).value;
+              this._update({
+                group_by: value === "products" ? "products" : undefined,
+              });
+            }}
+          >
+            <option value="items" ?selected=${c.group_by !== "products"}>
+              ${t.group_items}
+            </option>
+            <option value="products" ?selected=${c.group_by === "products"}>
+              ${t.group_products}
             </option>
           </select>
         </div>

@@ -46,6 +46,15 @@ export function itemLabel(item: FreezerItem, localize?: LocalizeFunc): string {
   return parts.join(" · ");
 }
 
+/** "800 g" below a kilogram, "2,5 kg" (locale decimal) above. */
+export function formatWeight(grams: number, language: string): string {
+  if (grams >= 1000) {
+    const kg = Math.round((grams / 1000) * 10) / 10;
+    return `${kg.toLocaleString(language === "cs" ? "cs-CZ" : "en-US")} kg`;
+  }
+  return `${grams} g`;
+}
+
 /** Whole months elapsed since the freeze month. */
 export function ageInMonths(
   item: Pick<FreezerItem, "month" | "year">,

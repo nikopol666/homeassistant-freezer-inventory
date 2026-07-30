@@ -64,6 +64,10 @@ A custom Home Assistant integration + Lovelace card for tracking individual pack
 
 ![Category and product management](docs/images/manage-light.png)
 
+**Summary by product** — the list toggle (☰/Σ) aggregates packages per product; tapping a product expands its packages:
+
+<img src="docs/images/summary-dark.png" alt="Summary by product with expandable packages" width="430"/>
+
 **Statistics mode** (`display_mode: stats`) — composition by category and monthly consumption:
 
 <img src="docs/images/stats-light.png" alt="Statistics card" width="460"/>
@@ -122,6 +126,7 @@ show_count: true
 show_weight: true
 show_note: true
 sort: oldest_first     # oldest_first | newest_first
+group_by: items        # items (packages) | products (summary per product)
 old_months: 6          # highlight threshold override
 language: en           # cs | en (defaults to the integration language)
 auto_close: 60         # close the popup after N seconds of inactivity
@@ -159,6 +164,7 @@ Each item can track a **weight**, a **piece count**, both, or neither:
 - *Enter amount* lets you remove grams and/or pieces; removing everything deletes the item
 - The add form also has a *number of packages* field that creates N separate items at once
 - **ADD & PRINT LABELS** in the add form creates the packages and immediately prints one label per package (each with its own QR)
+- The list has two views, toggled in the header: individual **packages** or a **summary per product** (e.g. Chicken breast · 2.5 kg · 6 pcs · 3 packages, expandable); `group_by` sets the default
 
 ## Services
 

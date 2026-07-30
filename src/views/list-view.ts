@@ -2,7 +2,12 @@ import { LitElement, html, css, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
 import type { Category, FreezerItem } from "../types";
 import type { LocalizeFunc } from "../localize";
-import { ageInMonths, formatDate } from "../localize";
+import {
+  ageInMonths,
+  formatDate,
+  formatWeight,
+  itemCountText,
+} from "../localize";
 import { avatarStyle, fireEvent, iconTemplate } from "../ha-helpers";
 import { sharedStyles } from "../styles";
 import { scanSupported } from "./scan-view";
@@ -17,8 +22,22 @@ export class FiListView extends LitElement {
   @property({ attribute: false }) showWeight = true;
   @property({ attribute: false }) showNote = true;
   @property({ attribute: false }) isAdmin = false;
+  @property({ attribute: false }) language = "en";
+  /** Start in the per-product summary view (card option group_by). */
+  @property({ attribute: false }) defaultGrouped = false;
 
   @state() private _filter: string | null = null;
+  @state() private _grouped = false;
+  @state() private _expanded = new Set<string>();
+
+  private _groupInitDone = false;
+
+  willUpdate(changed: Map<string, unknown>) {
+    if (!this._groupInitDone && changed.has("defaultGrouped")) {
+      this._grouped = this.defaultGrouped;
+      this._groupInitDone = true;
+    }
+  }
 
   private _ageClass(item: FreezerItem): string {
     const category = item.category_id
@@ -57,6 +76,47 @@ export class FiListView extends LitElement {
     );
   }
 
+  /** Per-product aggregation for the summary view. */
+  private get _productGroups() {
+    const groups = new Map<
+      string,
+      {
+        name: string;
+        items: FreezerItem[];
+        weight: number;
+        pieces: number;
+        worstAge: number;
+        worstClass: string;
+      }
+    >();
+    const rank = (cls: string) => (cls === "danger" ? 2 : cls === "warn" ? 1 : 0);
+    for (const item of this._visibleItems) {
+      const key = item.product_name.trim().toLocaleLowerCase();
+      let group = groups.get(key);
+      if (!group) {
+        group = {
+          name: item.product_name,
+          items: [],
+          weight: 0,
+          pieces: 0,
+          worstAge: 0,
+          worstClass: "",
+        };
+        groups.set(key, group);
+      }
+      group.items.push(item);
+      group.weight += item.weight ?? 0;
+      group.pieces += item.pieces ?? 0;
+      const age = ageInMonths(item);
+      const cls = this._ageClass(item);
+      if (rank(cls) > rank(group.worstClass)) group.worstClass = cls;
+      if (age > group.worstAge) group.worstAge = age;
+    }
+    return [...groups.entries()]
+      .map(([key, group]) => ({ key, ...group }))
+      .sort((a, b) => a.name.localeCompare(b.name, this.language));
+  }
+
   render() {
     if (!this.items.length) {
       return html`
@@ -88,32 +148,56 @@ export class FiListView extends LitElement {
     }
 
     const chips = this._filterChips;
+    const l = this.localize;
     return html`
-      ${chips.length > 1
-        ? html`
-            <div class="chips filter-row">
-              <button
-                class="chip ${this._filter === null ? "active" : ""}"
-                @click=${() => (this._filter = null)}
-              >
-                ${this.localize("all")}
-              </button>
-              ${chips.map(
-                (chip) => html`
-                  <button
-                    class="chip ${this._filter === chip.id ? "active" : ""}"
-                    @click=${() =>
-                      (this._filter = this._filter === chip.id ? null : chip.id)}
-                  >
-                    ${chip.name}
-                  </button>
-                `
-              )}
-            </div>
-          `
-        : nothing}
+      <div class="toolbar">
+        ${chips.length > 1
+          ? html`
+              <div class="chips filter-row">
+                <button
+                  class="chip ${this._filter === null ? "active" : ""}"
+                  @click=${() => (this._filter = null)}
+                >
+                  ${l("all")}
+                </button>
+                ${chips.map(
+                  (chip) => html`
+                    <button
+                      class="chip ${this._filter === chip.id ? "active" : ""}"
+                      @click=${() =>
+                        (this._filter =
+                          this._filter === chip.id ? null : chip.id)}
+                    >
+                      ${chip.name}
+                    </button>
+                  `
+                )}
+              </div>
+            `
+          : html`<span class="toolbar-spacer"></span>`}
+        <div class="segment" role="group" aria-label=${l("view_toggle")}>
+          <button
+            class="segment-btn ${this._grouped ? "" : "active"}"
+            title=${l("view_items")}
+            aria-label=${l("view_items")}
+            @click=${() => (this._grouped = false)}
+          >
+            <ha-icon icon="mdi:format-list-bulleted"></ha-icon>
+          </button>
+          <button
+            class="segment-btn ${this._grouped ? "active" : ""}"
+            title=${l("view_summary")}
+            aria-label=${l("view_summary")}
+            @click=${() => (this._grouped = true)}
+          >
+            <ha-icon icon="mdi:sigma"></ha-icon>
+          </button>
+        </div>
+      </div>
       <div class="list" role="list">
-        ${this._visibleItems.map((item) => this._renderRow(item))}
+        ${this._grouped
+          ? this._productGroups.map((group) => this._renderGroup(group))
+          : this._visibleItems.map((item) => this._renderRow(item))}
       </div>
       <div class="footer">
         <button class="btn btn-primary" @click=${() => fireEvent(this, "fi-add")}>
@@ -147,7 +231,65 @@ export class FiListView extends LitElement {
     `;
   }
 
-  private _renderRow(item: FreezerItem) {
+  private _renderGroup(group: {
+    key: string;
+    name: string;
+    items: FreezerItem[];
+    weight: number;
+    pieces: number;
+    worstAge: number;
+    worstClass: string;
+  }) {
+    const l = this.localize;
+    const category = this._categoryFor(group.items[0]);
+    const expanded = this._expanded.has(group.key);
+    const parts: string[] = [];
+    if (group.weight > 0) parts.push(formatWeight(group.weight, this.language));
+    if (group.pieces > 0) parts.push(`${group.pieces} ${l("pieces_short")}`);
+    parts.push(itemCountText(l, group.items.length));
+    return html`
+      <button
+        class="item-row group-row ${group.worstClass}"
+        role="listitem"
+        aria-expanded=${expanded}
+        @click=${() => {
+          const next = new Set(this._expanded);
+          if (expanded) next.delete(group.key);
+          else next.add(group.key);
+          this._expanded = next;
+        }}
+      >
+        <span
+          class="avatar ${group.worstClass}"
+          style=${group.worstClass ? "" : avatarStyle(category?.color)}
+        >
+          ${iconTemplate(category?.icon, "mdi:snowflake")}
+        </span>
+        <span class="item-main">
+          <span class="item-name">${group.name}</span>
+          <span class="item-sub">${parts.join(" · ")}</span>
+        </span>
+        ${group.worstClass
+          ? html`<span class="age-badge ${group.worstClass}"
+              >${l("months_old", { months: group.worstAge })}</span
+            >`
+          : nothing}
+        <ha-icon
+          class="chevron"
+          icon=${expanded ? "mdi:chevron-up" : "mdi:chevron-down"}
+        ></ha-icon>
+      </button>
+      ${expanded
+        ? html`
+            <div class="group-items">
+              ${group.items.map((item) => this._renderRow(item, true))}
+            </div>
+          `
+        : nothing}
+    `;
+  }
+
+  private _renderRow(item: FreezerItem, nested = false) {
     const ageClass = this._ageClass(item);
     const age = ageInMonths(item);
     const category = this._categoryFor(item);
@@ -163,7 +305,7 @@ export class FiListView extends LitElement {
       : this.localize("no_weight");
     return html`
       <button
-        class="item-row ${ageClass}"
+        class="item-row ${ageClass} ${nested ? "nested" : ""}"
         role="listitem"
         @click=${() => fireEvent(this, "fi-select-item", { item })}
       >
@@ -194,8 +336,79 @@ export class FiListView extends LitElement {
   static styles = [
     sharedStyles,
     css`
-      .filter-row {
+      .toolbar {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
         padding: 4px 0 14px;
+      }
+
+      .toolbar .filter-row {
+        flex: 1;
+        padding: 0;
+      }
+
+      .toolbar-spacer {
+        flex: 1;
+      }
+
+      .segment {
+        flex: none;
+        display: flex;
+        border: 1px solid var(--fi-divider);
+        border-radius: 20px;
+        overflow: hidden;
+      }
+
+      .segment-btn {
+        width: 46px;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--fi-secondary);
+      }
+
+      .segment-btn.active {
+        background: color-mix(in srgb, var(--fi-accent) 16%, transparent);
+        color: var(--fi-accent);
+      }
+
+      .segment-btn ha-icon {
+        --mdc-icon-size: 20px;
+      }
+
+      .group-row .chevron {
+        flex: none;
+        color: var(--fi-secondary);
+        --mdc-icon-size: 22px;
+      }
+
+      .group-items {
+        border-left: 3px solid var(--fi-chip-bg);
+        margin-left: 10px;
+      }
+
+      .item-row.nested {
+        padding-left: 16px;
+        min-height: calc(var(--fi-row-height) - 12px);
+      }
+
+      .item-row.nested .avatar {
+        width: 34px;
+        height: 34px;
+      }
+
+      .item-row.nested .avatar .emoji-icon {
+        font-size: 18px;
+      }
+
+      .item-row.nested .avatar ha-icon {
+        --mdc-icon-size: 20px;
+      }
+
+      .item-row.nested .item-name {
+        font-size: 15px;
       }
 
       .list {

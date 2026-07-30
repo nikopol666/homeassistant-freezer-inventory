@@ -42,7 +42,7 @@ import {
   shareLabelImages,
 } from "./labels";
 
-const CARD_VERSION = "1.5.0";
+const CARD_VERSION = "1.6.0";
 const DEFAULT_FREEZER = "main_freezer";
 const UNDO_TIMEOUT = 6000;
 
@@ -765,6 +765,8 @@ class FreezerInventoryCard extends LitElement {
         .showWeight=${this._config.show_weight !== false}
         .showNote=${this._config.show_note !== false}
         .isAdmin=${this.hass?.user?.is_admin ?? false}
+        .language=${this._config.language || this._integration?.language || "en"}
+        .defaultGrouped=${this._config.group_by === "products"}
         @fi-add=${() => this._openDialog("picker")}
         @fi-manage=${() => this._openDialog("manage")}
         @fi-scan=${() => this._openDialog("scan")}
