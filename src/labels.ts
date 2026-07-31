@@ -1,6 +1,6 @@
 import qrcode from "qrcode-generator";
 import type { FreezerItem } from "./types";
-import { formatDate } from "./localize";
+import { formatDate, shortId } from "./localize";
 import type { LocalizeFunc } from "./localize";
 
 export const QR_PREFIX = "fi:";
@@ -84,7 +84,7 @@ function labelHtml(item: FreezerItem, l: LocalizeFunc, qrData: QrData): string {
   if (item.pieces != null) amount.push(`${item.pieces} ${l("pieces_short")}`);
   return `
     <div class="label">
-      <div class="qr">${qrSvg(qrData(item))}</div>
+      <div class="qr">${qrSvg(qrData(item))}<div class="id">${shortId(item.id)}</div></div>
       <div class="text">
         <div class="name">${escapeHtml(item.product_name)}</div>
         <div class="meta">${formatDate(item)}${
@@ -127,7 +127,8 @@ function labelPrinterCss(format: LabelFormat): string {
   .text { min-width: 0; }
   .name { font-size: ${thin ? 8 : 12}pt; font-weight: 700; line-height: 1.15; }
   .meta { font-size: ${thin ? 7 : 10}pt; margin-top: ${thin ? 0.5 : 1.5}mm; }
-  .note { font-size: ${thin ? 6 : 8}pt; font-style: italic; margin-top: ${thin ? 0 : 1}mm; }`;
+  .note { font-size: ${thin ? 6 : 8}pt; font-style: italic; margin-top: ${thin ? 0 : 1}mm; }
+  .id { font-size: 5pt; font-family: monospace; color: #555; text-align: center; margin-top: 0.5mm; }`;
 }
 
 const A4_SHEET_CSS = `
@@ -159,7 +160,8 @@ const A4_SHEET_CSS = `
   .text { min-width: 0; }
   .name { font-size: 14pt; font-weight: 700; line-height: 1.2; }
   .meta { font-size: 12pt; margin-top: 1.5mm; }
-  .note { font-size: 10pt; font-style: italic; margin-top: 1mm; }`;
+  .note { font-size: 10pt; font-style: italic; margin-top: 1mm; }
+  .id { font-size: 6pt; font-family: monospace; color: #555; text-align: center; margin-top: 0.5mm; }`;
 
 /**
  * Print labels via a hidden iframe (more reliable than window.open in kiosk
@@ -317,6 +319,19 @@ function drawLabelCanvas(
     ctx.font = line.font;
     ctx.fillText(line.text, textX, y);
     y += line.size + gap;
+  }
+  if (!thin) {
+    // Tiny id under the QR so a failed print can be matched to its item
+    const idSize = Math.round(1.6 * PX_PER_MM);
+    ctx.font = `${idSize}px monospace`;
+    ctx.fillStyle = "#555";
+    const idText = shortId(item.id);
+    const idWidth = ctx.measureText(idText).width;
+    ctx.fillText(
+      idText,
+      Math.max(2, pad + Math.round((qrSize - idWidth) / 2)),
+      Math.min(height - idSize - 2, qrY + qrSize + 2)
+    );
   }
   return canvas;
 }
@@ -528,6 +543,16 @@ export function niimbotPrintData(
     boxsize,
     eclevel: 2,
   });
+  if (!thin && height - (qrY + qrSize) >= 18) {
+    payload.push({
+      type: "text",
+      value: shortId(item.id),
+      x: qrX + Math.round(qrSize / 4),
+      y: qrY + qrSize + 2,
+      size: 14,
+      ...(font ? { font } : {}),
+    });
+  }
 
   return { payload, width, height };
 }

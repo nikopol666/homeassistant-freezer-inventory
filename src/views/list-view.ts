@@ -7,6 +7,7 @@ import {
   formatDate,
   formatWeight,
   itemCountText,
+  shortId,
 } from "../localize";
 import { avatarStyle, fireEvent, iconTemplate } from "../ha-helpers";
 import { sharedStyles } from "../styles";
@@ -322,6 +323,7 @@ export class FiListView extends LitElement {
             ${this.showNote && item.note
               ? html`<span class="item-note"> · ${item.note}</span>`
               : nothing}
+            <span class="row-id">${shortId(item.id)}</span>
           </span>
         </span>
         ${ageClass
@@ -482,6 +484,13 @@ export class FiListView extends LitElement {
 
       .item-note {
         font-style: italic;
+      }
+
+      .row-id {
+        font-family: monospace;
+        font-size: 11px;
+        opacity: 0.55;
+        margin-left: 6px;
       }
 
       .age-badge {

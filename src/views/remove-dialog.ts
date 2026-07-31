@@ -3,7 +3,7 @@ import { property, state } from "lit/decorators.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import type { FreezerItem } from "../types";
 import type { LocalizeFunc } from "../localize";
-import { itemLabel } from "../localize";
+import { itemLabel, shortId } from "../localize";
 import { fireEvent } from "../ha-helpers";
 import { sharedStyles } from "../styles";
 import { qrPayload, qrSvg } from "../labels";
@@ -106,8 +106,11 @@ export class FiRemoveDialog extends LitElement {
         <h2 class="view-title question">
           ${l("remove_question", { label: itemLabel(this.item, l) })}
         </h2>
-        <div class="qr" title=${this.item.id}>
-          ${unsafeHTML(qrSvg(this.qrData ?? qrPayload(this.item), 3))}
+        <div class="qr-block" title=${this.item.id}>
+          <div class="qr">
+            ${unsafeHTML(qrSvg(this.qrData ?? qrPayload(this.item), 3))}
+          </div>
+          <span class="qr-id">${shortId(this.item.id)}</span>
         </div>
       </div>
       ${this.item.note
@@ -310,13 +313,27 @@ export class FiRemoveDialog extends LitElement {
         min-width: 0;
       }
 
-      .qr {
+      .qr-block {
         flex: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+      }
+
+      .qr {
         width: 84px;
         height: 84px;
         padding: 6px;
         background: #fff;
         border-radius: 8px;
+        box-sizing: border-box;
+      }
+
+      .qr-id {
+        font-family: monospace;
+        font-size: 11px;
+        color: var(--fi-secondary);
       }
 
       .qr svg {

@@ -42,7 +42,7 @@ import {
   shareLabelImages,
 } from "./labels";
 
-const CARD_VERSION = "1.6.0";
+const CARD_VERSION = "1.6.1";
 const DEFAULT_FREEZER = "main_freezer";
 const UNDO_TIMEOUT = 6000;
 

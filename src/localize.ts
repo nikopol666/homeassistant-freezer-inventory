@@ -46,6 +46,11 @@ export function itemLabel(item: FreezerItem, localize?: LocalizeFunc): string {
   return parts.join(" · ");
 }
 
+/** Short human-matchable form of an item id: "#a3f9c2d1". */
+export function shortId(id: string): string {
+  return `#${id.split("-")[0].slice(0, 8)}`;
+}
+
 /** "800 g" below a kilogram, "2,5 kg" (locale decimal) above. */
 export function formatWeight(grams: number, language: string): string {
   if (grams >= 1000) {
