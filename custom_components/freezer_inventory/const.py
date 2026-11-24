@@ -28,10 +28,15 @@ DEFAULT_UNIT = "g"
 DEFAULT_OLD_MONTHS = 6
 DEFAULT_FREEZER_ID = "main_freezer"
 
-LANGUAGES = ["cs", "en"]
+LANGUAGES = ["cs", "en", "de", "de_at"]
 UNITS = ["g", "kg"]
 
-DEFAULT_FREEZER_NAMES = {"cs": "Mrazák", "en": "Freezer"}
+DEFAULT_FREEZER_NAMES = {
+    "cs": "Mrazák",
+    "en": "Freezer",
+    "de": "Gefrierschrank",
+    "de_at": "Tiefkühler",
+}
 
 # Events
 EVENT_ITEM_ADDED = f"{DOMAIN}_item_added"

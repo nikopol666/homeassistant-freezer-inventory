@@ -157,7 +157,9 @@ class FreezerInventoryCard extends LitElement {
     const language =
       this._config.language ||
       this._integration?.language ||
-      (this.hass?.locale?.language === "cs" ? "cs" : "en");
+      (["cs", "de"].includes(this.hass?.locale?.language?.split("-")[0] ?? "")
+        ? (this.hass!.locale!.language.split("-")[0] as "cs" | "de")
+        : "en");
     return createLocalize(language);
   }
 
@@ -751,7 +753,12 @@ class FreezerInventoryCard extends LitElement {
   }
 
   private _friendlyName(): string {
-    return this._integration?.language === "en" ? "Freezer" : "Mrazák";
+    const names: Record<string, string> = {
+      en: "Freezer",
+      de: "Gefrierschrank",
+      de_at: "Tiefkühler",
+    };
+    return names[this._integration?.language ?? ""] ?? "Mrazák";
   }
 
   private _renderListView() {

@@ -1,0 +1,367 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Tiefkühl-Inventar",
+        "description": "Richte dein Tiefkühl-Inventar ein. Alles lässt sich später ändern.",
+        "data": {
+          "language": "Sprache der Oberfläche",
+          "freezer_name": "Name des Gefrierschranks",
+          "create_defaults": "Standardprodukte anlegen",
+          "default_unit": "Standard-Gewichtseinheit"
+        }
+      }
+    },
+    "error": {
+      "invalid_name": "Der Name darf nicht leer sein."
+    },
+    "abort": {
+      "single_instance_allowed": "Das Tiefkühl-Inventar ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "menu_options": {
+          "settings": "Einstellungen",
+          "add_freezer": "Gefrierschrank hinzufügen",
+          "edit_freezer": "Gefrierschrank bearbeiten oder löschen",
+          "export_data": "Daten exportieren",
+          "import_data": "Daten importieren"
+        }
+      },
+      "settings": {
+        "title": "Einstellungen",
+        "data": {
+          "language": "Sprache der Oberfläche",
+          "old_months": "Packungen hervorheben, die älter sind als (Monate)"
+        }
+      },
+      "add_freezer": {
+        "title": "Gefrierschrank hinzufügen",
+        "data": {
+          "name": "Name des Gefrierschranks",
+          "icon": "Symbol (Emoji oder mdi:...)"
+        }
+      },
+      "edit_freezer": {
+        "title": "Gefrierschrank auswählen",
+        "data": {
+          "freezer": "Gefrierschrank"
+        }
+      },
+      "edit_freezer_details": {
+        "title": "{name} bearbeiten",
+        "data": {
+          "name": "Name des Gefrierschranks",
+          "icon": "Symbol (Emoji oder mdi:...)",
+          "delete": "Diesen Gefrierschrank löschen (muss leer sein)"
+        }
+      },
+      "export_data": {
+        "title": "Export abgeschlossen",
+        "description": "Die Daten wurden exportiert nach:\n\n`{path}`\n\nDie Datei enthält Kategorien, Produkte, Gefrierschränke mit allen Packungen und den Verbrauchsverlauf."
+      },
+      "import_data": {
+        "title": "Daten importieren",
+        "data": {
+          "mode": "Importmodus",
+          "data": "Exportierte JSON-Daten (Dateiinhalt einfügen)"
+        }
+      }
+    },
+    "error": {
+      "invalid_name": "Der Name darf nicht leer sein.",
+      "freezer_not_empty": "Der Gefrierschrank ist nicht leer und kann nicht gelöscht werden.",
+      "last_freezer": "Der letzte Gefrierschrank kann nicht gelöscht werden.",
+      "invalid_json": "Das ist kein gültiges JSON.",
+      "invalid_import": "Die Daten sind kein gültiger Export des Tiefkühl-Inventars."
+    },
+    "abort": {
+      "not_loaded": "Die Integration ist nicht geladen."
+    }
+  },
+  "selector": {
+    "language": {
+      "options": {
+        "cs": "Čeština",
+        "en": "English",
+        "de": "Deutsch (Deutschland)",
+        "de_at": "Deutsch (Österreich)"
+      }
+    },
+    "default_unit": {
+      "options": {
+        "g": "Gramm (g)",
+        "kg": "Kilogramm (kg)"
+      }
+    },
+    "import_mode": {
+      "options": {
+        "merge": "Mit aktuellen Daten zusammenführen",
+        "replace": "Aktuelle Daten ersetzen"
+      }
+    }
+  },
+  "services": {
+    "add_item": {
+      "name": "Packung einlagern",
+      "description": "Lagert eine oder mehrere Packungen in einen Gefrierschrank ein.",
+      "fields": {
+        "freezer_id": {
+          "name": "Gefrierschrank",
+          "description": "ID des Gefrierschranks, z. B. main_freezer."
+        },
+        "product_id": {
+          "name": "Produkt-ID",
+          "description": "ID eines vordefinierten Produkts. Entweder dies oder ein Produktname ist erforderlich."
+        },
+        "product_name": {
+          "name": "Produktname",
+          "description": "Freier Produktname. Entweder dies oder eine Produkt-ID ist erforderlich."
+        },
+        "month": {
+          "name": "Monat",
+          "description": "Monat des Einfrierens (1–12)."
+        },
+        "year": {
+          "name": "Jahr",
+          "description": "Jahr des Einfrierens."
+        },
+        "weight": {
+          "name": "Gewicht",
+          "description": "Gewicht in Gramm (optional)."
+        },
+        "note": {
+          "name": "Notiz",
+          "description": "Optionale Notiz."
+        },
+        "quantity": {
+          "name": "Anzahl",
+          "description": "Anzahl gleicher Packungen (Standard 1)."
+        },
+        "pieces": {
+          "name": "Stück",
+          "description": "Anzahl Stück in der Packung (optional)."
+        }
+      }
+    },
+    "remove_item": {
+      "name": "Packung entnehmen",
+      "description": "Entnimmt eine ganze Packung aus einem Gefrierschrank.",
+      "fields": {
+        "freezer_id": {
+          "name": "Gefrierschrank",
+          "description": "ID des Gefrierschranks."
+        },
+        "item_id": {
+          "name": "Packungs-ID",
+          "description": "Eindeutige ID der Packung."
+        }
+      }
+    },
+    "remove_half": {
+      "name": "Hälfte entnehmen",
+      "description": "Halbiert das aktuelle Gewicht einer Packung.",
+      "fields": {
+        "freezer_id": {
+          "name": "Gefrierschrank",
+          "description": "ID des Gefrierschranks."
+        },
+        "item_id": {
+          "name": "Packungs-ID",
+          "description": "Eindeutige ID der Packung."
+        }
+      }
+    },
+    "remove_amount": {
+      "name": "Menge entnehmen",
+      "description": "Entnimmt ein bestimmtes Gewicht aus einer Packung. Wird alles entnommen, wird die Packung gelöscht.",
+      "fields": {
+        "freezer_id": {
+          "name": "Gefrierschrank",
+          "description": "ID des Gefrierschranks."
+        },
+        "item_id": {
+          "name": "Packungs-ID",
+          "description": "Eindeutige ID der Packung."
+        },
+        "amount": {
+          "name": "Menge",
+          "description": "Zu entnehmendes Gewicht in Gramm."
+        },
+        "pieces": {
+          "name": "Stück",
+          "description": "Anzahl zu entnehmender Stück."
+        }
+      }
+    },
+    "update_item": {
+      "name": "Packung aktualisieren",
+      "description": "Ändert nur die angegebenen Felder einer Packung.",
+      "fields": {
+        "freezer_id": {
+          "name": "Gefrierschrank",
+          "description": "ID des Gefrierschranks."
+        },
+        "item_id": {
+          "name": "Packungs-ID",
+          "description": "Eindeutige ID der Packung."
+        },
+        "product_id": {
+          "name": "Produkt-ID",
+          "description": "Neue Produkt-ID."
+        },
+        "product_name": {
+          "name": "Produktname",
+          "description": "Neuer Produktname."
+        },
+        "month": {
+          "name": "Monat",
+          "description": "Neuer Monat (1–12)."
+        },
+        "year": {
+          "name": "Jahr",
+          "description": "Neues Jahr."
+        },
+        "weight": {
+          "name": "Gewicht",
+          "description": "Neues aktuelles Gewicht in Gramm."
+        },
+        "original_weight": {
+          "name": "Ursprüngliches Gewicht",
+          "description": "Neues ursprüngliches Gewicht in Gramm."
+        },
+        "note": {
+          "name": "Notiz",
+          "description": "Neue Notiz."
+        },
+        "pieces": {
+          "name": "Stück",
+          "description": "Neue Stückzahl."
+        },
+        "original_pieces": {
+          "name": "Ursprüngliche Stückzahl",
+          "description": "Neue ursprüngliche Stückzahl."
+        }
+      }
+    },
+    "move_item": {
+      "name": "Packung umlagern",
+      "description": "Lagert eine Packung in einen anderen Gefrierschrank um.",
+      "fields": {
+        "item_id": {
+          "name": "Packungs-ID",
+          "description": "Eindeutige ID der Packung."
+        },
+        "source_freezer_id": {
+          "name": "Quell-Gefrierschrank",
+          "description": "ID des Quell-Gefrierschranks."
+        },
+        "target_freezer_id": {
+          "name": "Ziel-Gefrierschrank",
+          "description": "ID des Ziel-Gefrierschranks."
+        }
+      }
+    },
+    "add_product": {
+      "name": "Produkt anlegen",
+      "description": "Fügt dem Produktkatalog ein Produkt hinzu.",
+      "fields": {
+        "name": {
+          "name": "Name",
+          "description": "Produktname."
+        },
+        "category_id": {
+          "name": "Kategorie",
+          "description": "ID einer bestehenden Kategorie."
+        },
+        "icon": {
+          "name": "Symbol",
+          "description": "MDI-Symbol, z. B. mdi:food-drumstick."
+        },
+        "default_weight": {
+          "name": "Standardgewicht",
+          "description": "Standardgewicht in Gramm."
+        },
+        "quick_weights": {
+          "name": "Schnellauswahl Gewicht",
+          "description": "Liste der Gewichte zur Schnellauswahl in Gramm."
+        },
+        "ask_for_weight": {
+          "name": "Gewicht abfragen",
+          "description": "Ob beim Einlagern dieses Produkts das Gewichtsfeld angezeigt wird."
+        },
+        "quick_pieces": {
+          "name": "Schnellauswahl Stück",
+          "description": "Liste der Stückzahlen zur Schnellauswahl."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "freezer_not_found": {
+      "message": "Den Gefrierschrank \"{freezer_id}\" gibt es nicht."
+    },
+    "item_not_found": {
+      "message": "Die Packung gibt es nicht mehr."
+    },
+    "item_exists": {
+      "message": "Die Packung existiert bereits."
+    },
+    "no_weight": {
+      "message": "Für die Packung ist kein Gewicht angegeben."
+    },
+    "not_enough_weight": {
+      "message": "{amount} g können nicht entnommen werden. Es sind nur noch {weight} g da."
+    },
+    "invalid_month": {
+      "message": "Der Monat ist ungültig."
+    },
+    "invalid_year": {
+      "message": "Das Jahr ist ungültig."
+    },
+    "invalid_weight": {
+      "message": "Das Gewicht muss eine positive Zahl sein."
+    },
+    "invalid_amount": {
+      "message": "Die Menge muss eine positive Zahl sein."
+    },
+    "invalid_name": {
+      "message": "Der Name darf nicht leer sein."
+    },
+    "invalid_quantity": {
+      "message": "Die Anzahl ist ungültig."
+    },
+    "product_not_found": {
+      "message": "Das Produkt \"{product_id}\" gibt es nicht."
+    },
+    "category_not_found": {
+      "message": "Die Kategorie \"{category_id}\" gibt es nicht."
+    },
+    "duplicate_id": {
+      "message": "Diese ID wird bereits verwendet."
+    },
+    "missing_product": {
+      "message": "Ein Produkt oder ein Produktname ist erforderlich."
+    },
+    "no_pieces": {
+      "message": "Für die Packung ist keine Stückzahl angegeben."
+    },
+    "not_enough_pieces": {
+      "message": "{pieces} Stk. können nicht entnommen werden. Es sind nur noch {count} Stk. da."
+    },
+    "invalid_pieces": {
+      "message": "Die Stückzahl ist ungültig."
+    },
+    "freezer_not_empty": {
+      "message": "Der Gefrierschrank \"{name}\" ist nicht leer und kann nicht gelöscht werden."
+    },
+    "last_freezer": {
+      "message": "Der letzte Gefrierschrank kann nicht gelöscht werden."
+    },
+    "invalid_import": {
+      "message": "Die Daten sind kein gültiger Export des Tiefkühl-Inventars."
+    }
+  }
+}

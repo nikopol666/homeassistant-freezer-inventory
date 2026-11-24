@@ -35,7 +35,7 @@ A custom Home Assistant integration + Lovelace card for tracking individual pack
 - 🏷️ **QR labels** — print labels (single or all at once) with a QR code, scan them with the camera to open the item instantly
 - 💾 **Export / import** — full data export and merge/replace import in the integration options
 - 💾 **Persistent storage** — data lives in `.storage/`, survives restarts, included in HA backups
-- 🌍 **Czech & English** — language selected in the integration, independent of the HA language
+- 🌍 **Czech, English, German & Austrian German** — language selected in the integration, independent of the HA language
 - 🏪 **One-repo HACS install** — the card resource registers automatically
 
 ## Screenshots
@@ -128,7 +128,7 @@ show_note: true
 sort: oldest_first     # oldest_first | newest_first
 group_by: items        # items (packages) | products (summary per product)
 old_months: 6          # highlight threshold override
-language: en           # cs | en (defaults to the integration language)
+language: en           # cs | en | de | de_at (defaults to the integration language)
 auto_close: 60         # close the popup after N seconds of inactivity
 label_format: a4       # a4 | 50x30 | 40x30 | 40x12 | 30x15 | any "WxH" in mm
 label_action: print    # print (system dialog) | image (PNG) | niimbot (direct print)

@@ -107,7 +107,9 @@ class FreezerWeightSensor(FreezerSensorBase):
     ) -> None:
         super().__init__(coordinator, entry_id, freezer)
         self._attr_unique_id = f"{entry_id}_{freezer['id']}_weight"
-        self._attr_name = "Hmotnost" if coordinator.language == "cs" else "Weight"
+        self._attr_name = {"cs": "Hmotnost", "de": "Gewicht", "de_at": "Gewicht"}.get(
+            coordinator.language, "Weight"
+        )
 
     @property
     def native_value(self) -> int:
