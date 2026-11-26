@@ -45,7 +45,7 @@ import {
 /** Home Assistant UI languages the card falls back to when nothing is configured. */
 const HA_LANGUAGES: Record<string, string> = { cs: "cs", de: "de" };
 
-const CARD_VERSION = "1.6.1";
+const CARD_VERSION = "1.7.0";
 const DEFAULT_FREEZER = "main_freezer";
 const UNDO_TIMEOUT = 6000;
 
