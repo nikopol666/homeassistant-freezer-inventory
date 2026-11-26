@@ -53,19 +53,19 @@ export function shortId(id: string): string {
   return `#${id.split("-")[0].slice(0, 8)}`;
 }
 
+/** Number format locale per integration language. */
+const NUMBER_LOCALES: Record<string, string> = {
+  cs: "cs-CZ",
+  en: "en-US",
+  de: "de-DE",
+  de_at: "de-AT",
+};
+
 /** "800 g" below a kilogram, "2,5 kg" (locale decimal) above. */
 export function formatWeight(grams: number, language: string): string {
   if (grams >= 1000) {
     const kg = Math.round((grams / 1000) * 10) / 10;
-    return `${kg.toLocaleString(
-      language === "cs"
-        ? "cs-CZ"
-        : language === "de"
-          ? "de-DE"
-          : language === "de_at"
-            ? "de-AT"
-            : "en-US"
-    )} kg`;
+    return `${kg.toLocaleString(NUMBER_LOCALES[language] ?? "en-US")} kg`;
   }
   return `${grams} g`;
 }

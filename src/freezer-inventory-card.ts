@@ -42,6 +42,9 @@ import {
   shareLabelImages,
 } from "./labels";
 
+/** Home Assistant UI languages the card falls back to when nothing is configured. */
+const HA_LANGUAGES: Record<string, string> = { cs: "cs", de: "de" };
+
 const CARD_VERSION = "1.6.1";
 const DEFAULT_FREEZER = "main_freezer";
 const UNDO_TIMEOUT = 6000;
@@ -157,9 +160,8 @@ class FreezerInventoryCard extends LitElement {
     const language =
       this._config.language ||
       this._integration?.language ||
-      (["cs", "de"].includes(this.hass?.locale?.language?.split("-")[0] ?? "")
-        ? (this.hass!.locale!.language.split("-")[0] as "cs" | "de")
-        : "en");
+      HA_LANGUAGES[this.hass?.locale?.language?.split("-")[0] ?? ""] ||
+      "en";
     return createLocalize(language);
   }
 
