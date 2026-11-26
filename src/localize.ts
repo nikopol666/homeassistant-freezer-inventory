@@ -1,8 +1,10 @@
 import { cs } from "./translations/cs";
+import { de } from "./translations/de";
+import { de_at } from "./translations/de_at";
 import { en } from "./translations/en";
 import type { FreezerItem } from "./types";
 
-const DICTS: Record<string, Record<string, string>> = { cs, en };
+const DICTS: Record<string, Record<string, string>> = { cs, en, de, de_at };
 
 export type LocalizeFunc = (
   key: string,
@@ -55,7 +57,15 @@ export function shortId(id: string): string {
 export function formatWeight(grams: number, language: string): string {
   if (grams >= 1000) {
     const kg = Math.round((grams / 1000) * 10) / 10;
-    return `${kg.toLocaleString(language === "cs" ? "cs-CZ" : "en-US")} kg`;
+    return `${kg.toLocaleString(
+      language === "cs"
+        ? "cs-CZ"
+        : language === "de"
+          ? "de-DE"
+          : language === "de_at"
+            ? "de-AT"
+            : "en-US"
+    )} kg`;
   }
   return `${grams} g`;
 }

@@ -97,7 +97,7 @@ export interface CardConfig {
   /** Default list view: individual packages or a per-product summary. */
   group_by?: "items" | "products";
   old_months?: number;
-  language?: "cs" | "en";
+  language?: "cs" | "en" | "de" | "de_at";
   /** Close the popup after this many seconds of inactivity (0/unset = off). */
   auto_close?: number;
   /** Label size: "a4" sheet (default) or "<W>x<H>" in mm, e.g. "50x30". */

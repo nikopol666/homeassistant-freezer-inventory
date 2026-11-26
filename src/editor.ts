@@ -77,6 +77,42 @@ const TEXTS: Record<string, Record<string, string>> = {
     qr_app: "HA app link (homeassistant://, no public URL needed)",
     qr_link_base: "Dashboard URL/path (empty = current page)",
   },
+  de: {
+    freezer_id: "Gefrierschrank",
+    name: "Name (optional)",
+    icon: "Symbol",
+    display_mode: "Anzeigemodus",
+    popup: "Kachel mit Popup",
+    list: "Direkte Liste",
+    stats: "Statistik",
+    touch_mode: "Tablet-Modus (größere Elemente)",
+    show_count: "Anzahl der Packungen anzeigen",
+    show_weight: "Gewicht anzeigen",
+    show_note: "Notiz anzeigen",
+    sort: "Sortierung",
+    oldest_first: "Älteste zuerst",
+    newest_first: "Neueste zuerst",
+    group_by: "Standardansicht der Liste",
+    group_items: "Packungen",
+    group_products: "Übersicht nach Produkt",
+    old_months: "Hervorheben, wenn älter als (Monate)",
+    language: "Sprache der Karte",
+    lang_auto: "Wie Integration",
+    auto_close: "Bei Inaktivität automatisch schließen (Sekunden, leer = aus)",
+    label_format: "Etikettenformat",
+    label_a4: "A4-Bogen (88×36 mm)",
+    label_action: "Etikettendruck",
+    label_print: "Druckwarteschlange (normaler Drucker / Treiber)",
+    label_image: "PNG-Bild für eine Etikettendrucker-App",
+    label_niimbot: "Direkt über die Niimbot-Integration (BLE)",
+    label_printer: "Niimbot device_id (optional, nur bei mehreren Druckern)",
+    label_font: "Etiketten-Schrift (optional, TTF aus www/fonts)",
+    qr_content: "Inhalt des QR-Codes",
+    qr_id: "Interne ID (kompakt, Scan nur in der Karte)",
+    qr_link: "Web-Link (öffnet den Browser, öffentliche Adresse nötig)",
+    qr_app: "Link in die HA-App (homeassistant://, keine öffentliche Adresse nötig)",
+    qr_link_base: "Dashboard-Adresse/Pfad (leer = aktuelle Seite)",
+  },
 };
 
 class FreezerInventoryCardEditor extends LitElement {
@@ -105,7 +141,8 @@ class FreezerInventoryCardEditor extends LitElement {
   }
 
   private get _t(): Record<string, string> {
-    const language = this.hass?.locale?.language === "cs" ? "cs" : "en";
+    const hassLang = this.hass?.locale?.language?.split("-")[0] ?? "";
+    const language = hassLang in TEXTS ? hassLang : "en";
     return TEXTS[language];
   }
 
@@ -414,13 +451,15 @@ class FreezerInventoryCardEditor extends LitElement {
             @change=${(e: Event) => {
               const value = (e.target as HTMLSelectElement).value;
               this._update({
-                language: (value || undefined) as "cs" | "en" | undefined,
+                language: (value || undefined) as "cs" | "en" | "de" | "de_at" | undefined,
               });
             }}
           >
             <option value="" ?selected=${!c.language}>${t.lang_auto}</option>
             <option value="cs" ?selected=${c.language === "cs"}>Čeština</option>
             <option value="en" ?selected=${c.language === "en"}>English</option>
+            <option value="de" ?selected=${c.language === "de"}>Deutsch (Deutschland)</option>
+            <option value="de_at" ?selected=${c.language === "de_at"}>Deutsch (Österreich)</option>
           </select>
         </div>
 

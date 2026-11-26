@@ -85,7 +85,9 @@
     "language": {
       "options": {
         "cs": "Čeština",
-        "en": "English"
+        "en": "English",
+        "de": "Deutsch (Deutschland)",
+        "de_at": "Deutsch (Österreich)"
       }
     },
     "default_unit": {

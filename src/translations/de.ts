@@ -1,0 +1,151 @@
+// Deutsch (Deutschland)
+export const de: Record<string, string> = {
+  // Tile / list
+  items_one: "{count} Packung",
+  items_few: "{count} Packungen",
+  items_many: "{count} Packungen",
+  empty_freezer: "Der Gefrierschrank ist leer.",
+  add_first_item: "+ ERSTE PACKUNG EINLAGERN",
+  add: "+ EINLAGERN",
+  all: "Alle",
+  view_toggle: "Ansicht wechseln",
+  view_items: "Packungen",
+  view_summary: "Übersicht nach Produkt",
+  uncategorized: "Sonstiges",
+  no_weight: "kein Gewicht angegeben",
+  pieces_short: "Stk.",
+  pieces_field: "Stück pro Packung",
+  months_old: "{months} Mon.",
+  manage: "Produkte verwalten",
+  close: "Schließen",
+  back: "Zurück",
+
+  // Product picker
+  what_to_add: "Was möchtest du einlagern?",
+  other_product: "Anderes …",
+  custom_product_name: "Produktname",
+
+  // Item form
+  add_product_title: "Einlagern: {name}",
+  edit_item_title: "Packung bearbeiten",
+  product: "Produkt",
+  weight: "Gewicht",
+  original_weight: "Ursprüngliches Gewicht",
+  optional: "optional",
+  month: "Monat",
+  year: "Jahr",
+  note: "Notiz",
+  quantity: "Anzahl Packungen",
+  add_to_freezer: "IN DEN GEFRIERSCHRANK",
+  add_and_print: "EINLAGERN & ETIKETTEN DRUCKEN",
+  save: "SPEICHERN",
+  cancel: "ABBRECHEN",
+  confirm: "BESTÄTIGEN",
+  added_confirmation: "Eingelagert:",
+  weight_zero_remove: "Das Gewicht ist 0. Soll die Packung entfernt werden?",
+  remove_item_btn: "PACKUNG ENTFERNEN",
+
+  // Validation
+  err_name_required: "Bitte einen Produktnamen eingeben.",
+  err_invalid_weight: "Das Gewicht muss eine positive Zahl sein.",
+  err_invalid_month: "Der Monat ist ungültig.",
+  err_invalid_year: "Das Jahr ist ungültig.",
+  err_invalid_amount: "Die Menge muss eine positive Zahl sein.",
+  err_amount_too_big: "{amount} g können nicht entnommen werden. Es sind nur noch {weight} g da.",
+  err_invalid_pieces: "Die Stückzahl muss eine positive Zahl sein.",
+  err_pieces_too_big: "{pieces} Stk. können nicht entnommen werden. Es sind nur noch {count} Stk. da.",
+  err_nothing_to_remove: "Bitte Gewicht oder Stückzahl eingeben.",
+  err_generic: "Die Aktion ist fehlgeschlagen.",
+  err_add_failed: "Die Packung konnte nicht eingelagert werden.",
+  err_item_gone: "Die Packung gibt es nicht mehr. Die Liste wurde aktualisiert.",
+
+  // Remove dialog
+  remove_question: "{label} entnehmen?",
+  note_label: "Notiz:",
+  remove_all: "ALLES ENTNEHMEN",
+  remove_half: "HÄLFTE ENTNEHMEN – {half} g",
+  remove_half_pieces: "HÄLFTE ENTNEHMEN – {half} Stk.",
+  remove_amount: "MENGE EINGEBEN",
+  edit: "BEARBEITEN",
+  how_much_remove: "Wie viel möchtest du entnehmen?",
+  currently_in_freezer: "Derzeit im Gefrierschrank:",
+  remaining_after: "Bleibt nach der Entnahme:",
+
+  // Undo
+  item_removed: "Die Packung wurde entnommen.",
+  item_updated: "Die Packung wurde aktualisiert.",
+  undo: "RÜCKGÄNGIG",
+
+  // Manage view
+  categories: "Kategorien",
+  products: "Produkte",
+  add_category: "Kategorie hinzufügen",
+  add_product_btn: "Produkt hinzufügen",
+  name: "Name",
+  icon: "Symbol",
+  color: "Farbe",
+  category: "Kategorie",
+  no_category: "Keine Kategorie",
+  default_weight: "Standardgewicht",
+  quick_weights: "Schnellauswahl Gewicht (g, durch Komma getrennt)",
+  quick_pieces: "Schnellauswahl Stück (durch Komma getrennt)",
+  ask_for_weight: "Gewichtsfeld anzeigen",
+  enabled: "Sichtbar",
+  max_months: "Empfohlene Lagerdauer (Monate)",
+  delete: "Löschen",
+  restore_defaults: "Standardprodukte wiederherstellen",
+  restore_defaults_confirm:
+    "Standardprodukte und -kategorien wiederherstellen? Die Packungen im Gefrierschrank bleiben unverändert.",
+  delete_category_confirm:
+    "Kategorie {name} löschen? Ihre Produkte bleiben ohne Kategorie erhalten.",
+  delete_product_confirm: "Produkt {name} löschen?",
+  move_up: "Nach oben",
+  move_down: "Nach unten",
+
+  // Move between freezers
+  move: "UMLAGERN",
+  move_where: "In welchen Gefrierschrank umlagern?",
+  item_moved: "Die Packung wurde umgelagert nach: {name}",
+
+  // Labels & scanning
+  print_label: "ETIKETT DRUCKEN",
+  label_sent: "Etikett an den Niimbot-Drucker gesendet.",
+  labels_sent: "{count} Etiketten an den Niimbot-Drucker gesendet.",
+  label_downloaded:
+    "Etikett als PNG-Bild gespeichert. Öffne es in der App deines Etikettendruckers (z. B. Niimbot) und drucke es dort.",
+  print_unsupported_app:
+    "In der Home-Assistant-App funktioniert das Drucken nicht. Öffne Home Assistant im Browser (z. B. Chrome) und drucke von dort.",
+  print_all_labels: "Etiketten für alle Packungen drucken",
+  scan_title: "Etikett scannen",
+  scan_hint: "Halte die Kamera auf den QR-Code auf der Packung.",
+  scan_unsupported: "QR-Scannen wird in diesem Browser nicht unterstützt.",
+  scan_https:
+    "Die Kamera braucht eine sichere Verbindung (HTTPS). Öffne Home Assistant über eine HTTPS-Adresse (z. B. Nabu Casa).",
+  scan_camera_denied: "Die Kamera konnte nicht gestartet werden. Bitte Berechtigungen prüfen.",
+  scan_not_found: "Die gescannte Packung ist nicht in diesem Gefrierschrank.",
+  scan_button: "Etikett scannen",
+
+  // Stats
+  stats_items: "Packungen",
+  stats_weight: "Gesamt",
+  stats_avg_age: "Durchschnittsalter",
+  stats_oldest: "Ältestes",
+  stats_by_category: "Nach Kategorie",
+  stats_monthly: "Monatsübersicht",
+  stats_added: "Eingelagert",
+  stats_removed: "Entnommen",
+
+  // Months
+  month_1: "Januar",
+  month_2: "Februar",
+  month_3: "März",
+  month_4: "April",
+  month_5: "Mai",
+  month_6: "Juni",
+  month_7: "Juli",
+  month_8: "August",
+  month_9: "September",
+  month_10: "Oktober",
+  month_11: "November",
+  month_12: "Dezember",
+};
